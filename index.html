@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OT Segmentation Checker</title>
+<meta name="description" content="Check OT network segmentation against the Purdue model and IEC 62443 zones and conduits, from an Nmap scan and a Wireshark conversations export. Runs entirely in your browser.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  :root{
+    --navy:#1F3864; --steel:#2E75B6; --steel-light:#5B9BD5;
+    --paper:#F4F8FC; --paper-deep:#D5E8F0; --ink:#22303F; --ink-soft:#5B6B7A;
+    --line:#C9D8E3; --good:#2E8B57; --white:#FFFFFF;
+    --crit:#8E1B1B; --high:#C0392B; --med:#C06000; --low:#B8952E; --info:#5B6B7A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1240px; margin:0 auto; padding:32px 24px 64px;}
+  header{border-bottom:2px solid var(--navy); padding-bottom:16px; margin-bottom:22px; display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap;}
+  header .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--steel); margin:0 0 6px;}
+  header h1{margin:0; font-size:24px; font-weight:700; color:var(--navy); letter-spacing:-0.01em;}
+  header p{margin:6px 0 0; color:var(--ink-soft); font-size:13.5px; max-width:64ch;}
+  .status-line{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); text-align:right;}
+  .status-line b{color:var(--steel);}
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:4px; margin-bottom:20px;}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:12px 18px; border-bottom:1px solid var(--line); background:var(--paper-deep);}
+  .panel-head h2{margin:0; font-size:13px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--navy);}
+  .panel-body{padding:18px;}
+  .grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;}
+  .input-box h3{margin:0 0 4px; font-size:13.5px; color:var(--navy);}
+  .input-box .opt{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em;}
+  textarea{width:100%; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:3px; padding:9px 10px; min-height:120px; line-height:1.5; resize:vertical;}
+  textarea:focus{outline:none; border-color:var(--steel); background:var(--white);}
+  .file-row{display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap:wrap;}
+  .file-name{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--good);}
+  input[type=file]{font-size:12px; max-width:100%;}
+  .btn{font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; letter-spacing:.02em; color:var(--white); background:var(--steel); border:none; border-radius:3px; padding:9px 16px; cursor:pointer; transition:background .15s ease;}
+  .btn:hover{background:var(--steel-light);}
+  .btn:disabled{background:#A9BBC9; cursor:not-allowed;}
+  .btn.primary{background:var(--navy);} .btn.primary:hover{background:var(--steel);}
+  .btn.ghost{background:var(--paper-deep); color:var(--navy); border:1px solid var(--line);} .btn.ghost:hover{background:var(--paper);}
+  .btn.small{font-size:11px; padding:5px 10px;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+  select{font-family:'IBM Plex Mono',monospace; font-size:11.5px; border:1px solid var(--line); border-radius:3px; padding:4px 6px; background:var(--white); color:var(--ink); max-width:100%;}
+  .metrics{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px;}
+  .metric{background:var(--white); border:1px solid var(--line); border-radius:4px; padding:14px; text-align:center;}
+  .metric .n{font-size:26px; font-weight:700; font-family:'IBM Plex Mono',monospace; color:var(--navy);}
+  .metric .l{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:4px;}
+  .metric.crit .n{color:var(--crit);} .metric.high .n{color:var(--high);} .metric.med .n{color:var(--med);} .metric.low .n{color:var(--low);}
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th{background:var(--paper-deep); color:var(--navy); font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; padding:9px 10px; text-align:left; border-bottom:2px solid var(--line); position:sticky; top:0; z-index:1;}
+  td{padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr:nth-child(even) td{background:#FAFCFF;}
+  .tbl-scroll{max-height:540px; overflow:auto; border:1px solid var(--line); border-radius:4px;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .tag{display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:3px; color:var(--white); white-space:nowrap;}
+  .tag.Critical{background:var(--crit);} .tag.High{background:var(--high);} .tag.Medium{background:var(--med);} .tag.Low{background:var(--low);} .tag.Info{background:var(--info);}
+  .lvl{display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; padding:1px 6px; border-radius:3px; border:1px solid var(--line); background:var(--paper); color:var(--navy); white-space:nowrap;}
+  .banner{padding:12px 16px; border-radius:4px; font-size:13px; margin-bottom:14px; line-height:1.5;}
+  .banner.warn{background:#FDEBD0; border:1px solid var(--med); color:#7A4A00;}
+  .banner.ok{background:#EAFAF1; border:1px solid var(--good); color:#1E6B3E;}
+  .banner.info{background:var(--paper-deep); border:1px solid var(--line); color:var(--ink);}
+  .banner code, .help code{background:rgba(0,0,0,.06); padding:1px 5px; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:11.5px;}
+  .hint, .help{font-size:12px; color:var(--ink-soft); margin:6px 0 0; line-height:1.5;}
+  .empty{color:var(--ink-soft); font-style:italic; padding:24px; text-align:center; font-size:13px;}
+  .hidden{display:none !important;}
+  /* zone map */
+  .band{display:grid; grid-template-columns:150px 1fr; border-bottom:1px dashed var(--line); min-height:56px;}
+  .band:last-child{border-bottom:none;}
+  .band-label{padding:10px 12px; background:var(--paper); border-right:1px solid var(--line); font-size:11px; font-weight:600; color:var(--navy); text-transform:uppercase; letter-spacing:.04em;}
+  .band-label span{display:block; font-weight:400; text-transform:none; letter-spacing:0; color:var(--ink-soft); font-size:11px; margin-top:2px;}
+  .band-zones{display:flex; flex-wrap:wrap; gap:10px; padding:10px;}
+  .zone{border:1.5px solid var(--steel); border-radius:4px; background:var(--white); padding:8px 10px; min-width:170px; max-width:100%; flex:0 1 auto;}
+  .zone.flag{border-color:var(--high); box-shadow:0 0 0 2px rgba(192,57,43,.12);}
+  .zone-title{font-size:12px; font-weight:600; color:var(--navy);}
+  .zone-sub{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); margin-bottom:6px;}
+  .chips{display:flex; flex-wrap:wrap; gap:4px;}
+  .chip{font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:2px 6px; border-radius:3px; background:var(--paper-deep); color:var(--ink); cursor:default; white-space:nowrap;}
+  .chip.bad{background:#FADBD8; color:#7B241C; font-weight:600;}
+  .chip.unk{background:#FDEBD0; color:#7A4A00; font-weight:600;}
+  /* matrix */
+  .matrix td, .matrix th{text-align:center; white-space:nowrap;}
+  .matrix th.rowh{text-align:left; position:sticky; left:0; z-index:2;}
+  .matrix td.cell{cursor:pointer; font-family:'IBM Plex Mono',monospace; font-weight:600;}
+  .matrix td.self{background:#EEF3F8 !important; color:var(--ink-soft); font-weight:400;}
+  .matrix td.s-Critical{background:#F2D7D5 !important; color:var(--crit);} .matrix td.s-High{background:#FADBD8 !important; color:var(--high);}
+  .matrix td.s-Medium{background:#FDEBD0 !important; color:var(--med);} .matrix td.s-Low{background:#FCF3CF !important; color:#7D6608;}
+  .matrix td.s-Info{background:#EAF2F8 !important; color:var(--ink-soft);} .matrix td.s-ok{background:#EAFAF1 !important; color:var(--good);}
+  /* findings */
+  .finding{border:1px solid var(--line); border-left:4px solid var(--info); border-radius:4px; margin-bottom:10px; background:var(--white);}
+  .finding.Critical{border-left-color:var(--crit);} .finding.High{border-left-color:var(--high);} .finding.Medium{border-left-color:var(--med);} .finding.Low{border-left-color:var(--low);}
+  .finding summary{list-style:none; cursor:pointer; padding:11px 14px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;}
+  .finding summary::-webkit-details-marker{display:none;}
+  .finding .fid{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);}
+  .finding .ftitle{font-weight:600; font-size:13.5px; flex:1 1 300px;}
+  .finding .fbody{padding:0 14px 14px; font-size:13px; line-height:1.55;}
+  .finding .fbody p{margin:6px 0;}
+  .finding .refs{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);}
+  .ev{margin-top:8px;}
+  .filter-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;}
+  .filter-row input[type=search]{font-family:'IBM Plex Mono',monospace; font-size:12px; padding:6px 8px; border:1px solid var(--line); border-radius:3px; min-width:220px;}
+  footer{margin-top:20px; font-size:11.5px; color:var(--ink-soft); text-align:center; line-height:1.6;}
+  footer a{color:var(--steel);}
+  @media (max-width:640px){ .band{grid-template-columns:1fr;} .band-label{border-right:none; border-bottom:1px solid var(--line);} .wrap{padding:20px 16px 48px;} }
+  @media print{
+    body{background:#fff;} .no-print, .input-panel, #restore-card{display:none !important;}
+    .panel{border-color:#999;} .zone, .metric{break-inside:avoid;} .tbl-scroll{max-height:none; overflow:visible;}
+    details.finding{break-inside:avoid;} details.finding > .fbody{display:block;}
+    th{position:static;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Sale Fish Marketing &amp; Consulting &middot; OT Security Tools</p>
+      <h1>OT Segmentation Checker</h1>
+      <p>Checks whether an OT network is segmented the way it should be. Load an Nmap scan, optionally add a Wireshark conversations export, and define your zones. The tool maps every host to a Purdue level, builds the zone-to-zone conduit matrix, and flags traffic that crosses a boundary it shouldn't.</p>
+    </div>
+    <div class="status-line" id="statusLine">Runs entirely in your browser &middot; <b>nothing is uploaded</b></div>
+  </header>
+
+  <div class="panel hidden" id="restore-card" style="background:#FEF9E7; border-color:#F7DC6F;">
+    <div class="panel-body">
+      <b>Restore your previous session?</b> <span class="hint" id="restoreWhen"></span>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn" id="restoreBtn">Restore session</button>
+        <button class="btn ghost" id="dismissRestoreBtn">Start fresh</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel input-panel">
+    <div class="panel-head"><h2>1 &middot; Inputs</h2>
+      <div class="btn-row">
+        <button class="btn ghost small" id="sampleBtn" title="Loads a sample food &amp; beverage plant: 5 VLANs, 33 devices">Load sample plant</button>
+        <button class="btn ghost small" id="importBtn">Import session (.json)</button>
+        <input type="file" id="importFile" accept=".json,application/json" class="hidden">
+        <button class="btn ghost small" id="clearBtn">Clear all</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="grid3">
+        <div class="input-box">
+          <h3>Nmap scan <span class="opt">recommended</span></h3>
+          <p class="help">XML output from <code>nmap -sS -sV -O -oX scan.xml &lt;subnets&gt;</code>. It tells the tool what each device is and which services it exposes.</p>
+          <div class="file-row"><input type="file" id="nmapFile" accept=".xml,text/xml"><span class="file-name" id="nmapName"></span></div>
+          <textarea id="nmapText" placeholder="&hellip;or paste Nmap XML here"></textarea>
+        </div>
+        <div class="input-box">
+          <h3>Traffic conversations <span class="opt">optional, strongly recommended</span></h3>
+          <p class="help">In Wireshark: <b>Statistics &rarr; Conversations</b>, open the <b>TCP</b> tab, then <b>Copy &rarr; As CSV</b> (repeat for <b>UDP</b> and paste below it). Shows who actually talks to whom, which is what segmentation is about.</p>
+          <div class="file-row"><input type="file" id="convFile" accept=".csv,text/csv,.txt" multiple><span class="file-name" id="convName"></span></div>
+          <textarea id="convText" placeholder="&quot;Address A&quot;,&quot;Port A&quot;,&quot;Address B&quot;,&quot;Port B&quot;,&quot;Packets&quot;,&quot;Bytes&quot;,&hellip;"></textarea>
+        </div>
+        <div class="input-box">
+          <h3>Zones <span class="opt">your intended design</span></h3>
+          <p class="help">One rule per line: <code>subnet or IP = LEVEL name</code>. Levels: <code>L1</code> control (Level 0&ndash;1), <code>L2</code> supervisory, <code>L3</code> operations, <code>DMZ</code>, <code>ENT</code> enterprise/IT, <code>SIS</code> safety, <code>PARTNER</code> third-party/WAN. The most specific rule wins.</p>
+          <textarea id="zoneText" placeholder="10.30.10.0/24 = L3 Site Operations&#10;10.30.20.0/24 = L2 Supervisory&#10;10.30.30.0/24 = L1 Line 1 Filling&#10;10.30.30.50 = SIS Burner management"></textarea>
+          <div class="btn-row" style="margin-top:8px;"><button class="btn ghost small" id="suggestBtn">Suggest zones from data</button><span class="hint" id="suggestNote"></span></div>
+        </div>
+      </div>
+      <div id="inputMsg" style="margin-top:14px;"></div>
+      <div class="btn-row" style="margin-top:6px;">
+        <button class="btn primary" id="runBtn">Run segmentation check</button>
+        <span class="hint">Your inputs are saved in this browser so you can come back to them.</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="results" class="hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>2 &middot; Summary</h2>
+        <div class="btn-row no-print">
+          <button class="btn small" id="csvBtn">Export CSV</button>
+          <button class="btn small" id="jsonBtn">Save session (.json)</button>
+          <button class="btn small ghost" id="printBtn">Print / PDF report</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="metrics" id="metrics"></div>
+        <div id="verdict" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>3 &middot; Zone map (Purdue model)</h2><span class="hint" style="margin:0;">Red chips are hosts named in a Critical, High or Medium finding; amber chips were seen in traffic but not in the Nmap scan.</span></div>
+      <div class="panel-body" style="padding:0;" id="zoneMap"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>4 &middot; Conduit matrix</h2><span class="hint" style="margin:0;">Rows start the connection, columns receive it. Click a cell for the traffic behind it.</span></div>
+      <div class="panel-body">
+        <div class="tbl-scroll" style="max-height:none;"><table class="matrix" id="matrix"></table></div>
+        <div id="conduitDetail" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>5 &middot; Findings</h2>
+        <div class="btn-row no-print"><button class="btn ghost small" id="expandBtn">Expand all</button></div>
+      </div>
+      <div class="panel-body" id="findings"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>6 &middot; Hosts</h2><span class="hint" style="margin:0;">Change a host's zone if it sits somewhere other than its subnet suggests, then re-run.</span></div>
+      <div class="panel-body">
+        <div class="filter-row no-print"><input type="search" id="hostFilter" placeholder="Filter by IP, name, vendor, zone&hellip;"><span class="hint" id="hostCount"></span></div>
+        <div class="tbl-scroll"><table id="hostTable"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    OT Segmentation Checker &middot; checks against the Purdue model, IEC 62443-3-3 zones &amp; conduits (SR 5.1&ndash;5.2) and MITRE ATT&amp;CK for ICS (M0930 Network Segmentation).<br>
+    Findings are a starting point for review, not a certified assessment. &middot; Need a hand? <a href="https://www.salefishmarketing.com/contact.html" target="_top">Sale Fish Marketing &amp; Consulting</a>
+  </footer>
+</div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Reference data
+// ---------------------------------------------------------------------------
+const OT_PORTS = {502:"Modbus/TCP",20000:"DNP3",44818:"EtherNet/IP",2222:"EtherNet/IP I/O",102:"S7comm / IEC 61850 MMS",47808:"BACnet/IP",
+  2404:"IEC 60870-5-104",4840:"OPC UA",1962:"PCWorx",1911:"Niagara Fox",4911:"Niagara Fox TLS",789:"Red Lion Crimson",5094:"HART-IP",
+  9600:"Omron FINS",5006:"MELSEC MC",5007:"MELSEC MC",1200:"CODESYS",2455:"CODESYS",18245:"GE SRTP",18246:"GE SRTP",1502:"Triconex TriStation",
+  48898:"Beckhoff ADS",34962:"PROFINET RT",34963:"PROFINET RT",34964:"PROFINET CM",4000:"Emerson ROC",20547:"ProConOS",2455:"CODESYS",
+  44819:"EtherNet/IP",49320:"OPC UA (Kepware)",5450:"AVEVA PI",5457:"AVEVA PI",319:"PTP",320:"PTP"};
+const IT_PORTS = {20:"FTP data",21:"FTP",22:"SSH",23:"Telnet",25:"SMTP",53:"DNS",67:"DHCP",68:"DHCP",80:"HTTP",88:"Kerberos",110:"POP3",123:"NTP",
+  135:"MS-RPC",137:"NetBIOS",138:"NetBIOS",139:"NetBIOS",143:"IMAP",161:"SNMP",162:"SNMP trap",389:"LDAP",443:"HTTPS",445:"SMB",514:"Syslog",
+  636:"LDAPS",1433:"MS SQL",1521:"Oracle",3306:"MySQL",3389:"RDP",5432:"PostgreSQL",5900:"VNC",5938:"TeamViewer",5985:"WinRM",5986:"WinRM",
+  7070:"AnyDesk",8080:"HTTP alt",8443:"HTTPS alt",8530:"WSUS",8531:"WSUS",9443:"HTTPS alt"};
+const REMOTE_PORTS = new Set([22,23,3389,5900,5938,7070,5985,5986]);
+const CLEARTEXT_ADMIN = new Set([21,23,80,161,8080]);
+const FILESHARE_PORTS = new Set([135,137,138,139,445]);
+const HOST_IT_PORTS = new Set([135,139,445,3389,5900]);
+const L3_SERVICE_PORTS = new Set([1433,1521,3306,5432,5450,5457,88,389,636,49320]);
+
+const LEVELS = {
+  INTERNET:{rank:7, label:"Internet", band:"Internet", sub:"Public addresses"},
+  ENT:{rank:6, label:"ENT", band:"Enterprise", sub:"Level 4–5 · business IT"},
+  PARTNER:{rank:5, label:"PARTNER", band:"Third party / WAN", sub:"Vendors, utilities, remote sites"},
+  DMZ:{rank:4, label:"DMZ", band:"Industrial DMZ", sub:"Level 3.5"},
+  L3:{rank:3, label:"L3", band:"Operations", sub:"Level 3 · site ops"},
+  L2:{rank:2, label:"L2", band:"Supervisory", sub:"Level 2 · HMI, SCADA, EWS"},
+  L1:{rank:1, label:"L1", band:"Control", sub:"Level 0–1 · PLCs, RTUs, I/O"},
+  SIS:{rank:0, label:"SIS", band:"Safety", sub:"Safety instrumented systems"},
+  UNASSIGNED:{rank:-1, label:"—", band:"Unassigned", sub:"No zone rule covers these"}
+};
+const BAND_ORDER = ["INTERNET","ENT","PARTNER","DMZ","L3","L2","L1","SIS","UNASSIGNED"];
+const LEVEL_ALIASES = {L0:"L1",L1:"L1","L0-1":"L1","L0/1":"L1",LEVEL1:"L1",OT:"L1",CONTROL:"L1",FIELD:"L1",CELL:"L1",
+  L2:"L2",LEVEL2:"L2",SUPERVISORY:"L2",L3:"L3",LEVEL3:"L3",OPERATIONS:"L3","L3.5":"DMZ",DMZ:"DMZ",IDMZ:"DMZ",
+  L4:"ENT",L5:"ENT","L4-5":"ENT",IT:"ENT",ENT:"ENT",ENTERPRISE:"ENT",CORP:"ENT",CORPORATE:"ENT",BUSINESS:"ENT",
+  SIS:"SIS",SAFETY:"SIS",PARTNER:"PARTNER",VENDOR:"PARTNER",REMOTE:"PARTNER",WAN:"PARTNER",EXTERNAL:"PARTNER",UTILITY:"PARTNER",
+  INTERNET:"INTERNET"};
+const SEV_ORDER = ["Critical","High","Medium","Low","Info"];
+const SAMPLE = {nmap: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE nmaprun>\n<nmaprun scanner=\"nmap\" args=\"nmap -sS -sU -sV -O -p T:21-23,80,102,443,445,502,789,1911,1962,2404,3389,4840,5007,5094,9600,18245,20000,44818,U:161,47808 10.30.10.0/24 10.30.20.0/24 10.30.30.0/24 10.30.40.0/24 10.30.50.0/24\" start=\"1795014900\" startstr=\"Wed Nov 18 15:15:00 2026\" version=\"7.95\" xmloutputversion=\"1.05\">\n<scaninfo type=\"syn\" protocol=\"tcp\" numservices=\"45\" services=\"21-23,80,102,161,443,445,502,789,1911,1962,2222,2404,3389,4840,5007,5094,9600,18245,20000,44818,47808\"/>\n<host starttime=\"1795014903\" endtime=\"1795014905\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.10.1\" addrtype=\"ipv4\"/>\n<address addr=\"00:1E:BD:4C:11:01\" addrtype=\"mac\" vendor=\"Cisco Systems, Inc\"/>\n<hostnames><hostname name=\"core-sw (vlan10).plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"22\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"255\"/><service name=\"ssh\" product=\"Cisco SSH\" version=\"2.0\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"udp\" portid=\"161\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"255\"/><service name=\"snmp\" product=\"Cisco SNMP service\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Cisco IOS XE 17.X\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014906\" endtime=\"1795014908\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.20.1\" addrtype=\"ipv4\"/>\n<address addr=\"00:1E:BD:4C:11:01\" addrtype=\"mac\" vendor=\"Cisco Systems, Inc\"/>\n<hostnames><hostname name=\"core-sw (vlan20).plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<\/ports>\n<os><osmatch name=\"Cisco IOS XE 17.X\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014909\" endtime=\"1795014911\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.30.1\" addrtype=\"ipv4\"/>\n<address addr=\"00:1E:BD:4C:11:01\" addrtype=\"mac\" vendor=\"Cisco Systems, Inc\"/>\n<hostnames><hostname name=\"core-sw (vlan30).plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<\/ports>\n<os><osmatch name=\"Cisco IOS XE 17.X\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014912\" endtime=\"1795014914\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.1\" addrtype=\"ipv4\"/>\n<address addr=\"00:1E:BD:4C:11:01\" addrtype=\"mac\" vendor=\"Cisco Systems, Inc\"/>\n<hostnames><hostname name=\"core-sw (vlan40).plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<\/ports>\n<os><osmatch name=\"Cisco IOS XE 17.X\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014915\" endtime=\"1795014917\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.50.1\" addrtype=\"ipv4\"/>\n<address addr=\"00:1E:BD:4C:11:01\" addrtype=\"mac\" vendor=\"Cisco Systems, Inc\"/>\n<hostnames><hostname name=\"core-sw (vlan50).plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<\/ports>\n<os><osmatch name=\"Cisco IOS XE 17.X\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014918\" endtime=\"1795014920\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.10.5\" addrtype=\"ipv4\"/>\n<address addr=\"00:50:56:65:64:CB\" addrtype=\"mac\" vendor=\"VMware, Inc.\"/>\n<hostnames><hostname name=\"dc-01.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"53\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"domain\" product=\"Simple DNS Plus\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"88\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"kerberos-sec\" product=\"Microsoft Windows Kerberos\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"389\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"ldap\" product=\"Microsoft Windows Active Directory LDAP\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows Server 2022\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014921\" endtime=\"1795014923\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.10.10\" addrtype=\"ipv4\"/>\n<address addr=\"00:50:56:DB:E2:E7\" addrtype=\"mac\" vendor=\"VMware, Inc.\"/>\n<hostnames><hostname name=\"hist-01.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"5450\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"pi\" product=\"AVEVA PI Data Archive\" version=\"2023\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows Server 2019\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014924\" endtime=\"1795014926\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.10.11\" addrtype=\"ipv4\"/>\n<address addr=\"00:50:56:A6:67:79\" addrtype=\"mac\" vendor=\"VMware, Inc.\"/>\n<hostnames><hostname name=\"kep-01.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"49320\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"opcua-tcp\" product=\"PTC KEPServerEX OPC UA\" version=\"6.15\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows Server 2019\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014927\" endtime=\"1795014929\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.10.20\" addrtype=\"ipv4\"/>\n<address addr=\"B0:83:FE:62:CD:A7\" addrtype=\"mac\" vendor=\"Dell Inc.\"/>\n<hostnames><hostname name=\"mes-01.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"1433\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"ms-sql-s\" product=\"Microsoft SQL Server 2019\" version=\"15.00.4335\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows Server 2019\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014930\" endtime=\"1795014932\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.10.30\" addrtype=\"ipv4\"/>\n<address addr=\"00:50:56:41:D9:EE\" addrtype=\"mac\" vendor=\"VMware, Inc.\"/>\n<hostnames><hostname name=\"jump-01.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"3389\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"ms-wbt-server\" product=\"Microsoft Terminal Services\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"443\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"https\" product=\"Microsoft IIS httpd\" version=\"10.0\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows Server 2022\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014933\" endtime=\"1795014935\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.10.40\" addrtype=\"ipv4\"/>\n<address addr=\"00:50:56:12:7F:82\" addrtype=\"mac\" vendor=\"VMware, Inc.\"/>\n<hostnames><hostname name=\"nms-01.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"22\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"ssh\" product=\"OpenSSH\" version=\"8.9p1\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"443\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"https\" product=\"nginx\" version=\"1.18.0\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Linux 4.15 - 5.19\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014936\" endtime=\"1795014938\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.20.10\" addrtype=\"ipv4\"/>\n<address addr=\"A4:BB:6D:F1:FC:8A\" addrtype=\"mac\" vendor=\"Dell Inc.\"/>\n<hostnames><hostname name=\"hmi-l1.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows 10 1809 - 22H2\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014939\" endtime=\"1795014941\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.20.11\" addrtype=\"ipv4\"/>\n<address addr=\"00:1B:1B:5A:33:13\" addrtype=\"mac\" vendor=\"Siemens AG\"/>\n<hostnames><hostname name=\"hmi-l2.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows 10 1809 - 22H2\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014942\" endtime=\"1795014944\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.20.20\" addrtype=\"ipv4\"/>\n<address addr=\"98:90:96:85:05:5A\" addrtype=\"mac\" vendor=\"Dell Inc.\"/>\n<hostnames><hostname name=\"ews-rock.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"3389\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"ms-wbt-server\" product=\"Microsoft Terminal Services\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows 10 1809 - 22H2\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014945\" endtime=\"1795014947\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.20.21\" addrtype=\"ipv4\"/>\n<address addr=\"08:00:06:67:3F:B7\" addrtype=\"mac\" vendor=\"SIEMENS AG\"/>\n<hostnames><hostname name=\"ews-siem.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"135\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"msrpc\" product=\"Microsoft Windows RPC\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"445\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"microsoft-ds\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows 10 1809 - 22H2\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014948\" endtime=\"1795014950\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.20.30\" addrtype=\"ipv4\"/>\n<address addr=\"00:01:F0:70:65:DF\" addrtype=\"mac\" vendor=\"Tridium, Inc.\"/>\n<hostnames><hostname name=\"bms-jace.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"1911\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"niagara-fox\" product=\"Tridium Niagara Fox\" version=\"4.13.1.16\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"443\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"https\" product=\"Niagara Web Server\" version=\"4.13\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"udp\" portid=\"47808\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"bacnet\" product=\"Tridium JACE BACnet\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Linux 4.15 - 5.19\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014951\" endtime=\"1795014953\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.30.2\" addrtype=\"ipv4\"/>\n<address addr=\"E4:90:69:9D:B3:62\" addrtype=\"mac\" vendor=\"Rockwell Automation\"/>\n<hostnames><hostname name=\"sw-l1.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"80\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"255\"/><service name=\"http\" product=\"Stratix web\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"udp\" portid=\"161\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"255\"/><service name=\"snmp\" product=\"Cisco SNMP service\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"44818\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"255\"/><service name=\"EtherNet-IP-2\" product=\"Rockwell Automation Stratix 5700\" version=\"17.12\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Cisco IOS XE 17.X\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014954\" endtime=\"1795014956\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.30.10\" addrtype=\"ipv4\"/>\n<address addr=\"00:1D:9C:95:AC:EB\" addrtype=\"mac\" vendor=\"Rockwell Automation\"/>\n<hostnames><hostname name=\"plc-filler.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"44818\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"EtherNet-IP-2\" product=\"Rockwell Automation 1756-EN2T/D\" version=\"11.003\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"80\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"http\" product=\"Rockwell Automation 1756-EN2T web\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Rockwell embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014957\" endtime=\"1795014959\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.30.11\" addrtype=\"ipv4\"/>\n<address addr=\"5C:88:16:7C:B2:1D\" addrtype=\"mac\" vendor=\"Rockwell Automation\"/>\n<hostnames><hostname name=\"plc-capper.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"44818\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"EtherNet-IP-2\" product=\"Rockwell Automation 5069-L330ER\" version=\"34.011\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Rockwell embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014960\" endtime=\"1795014962\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.30.20\" addrtype=\"ipv4\"/>\n<address addr=\"00:00:BC:63:C4:C8\" addrtype=\"mac\" vendor=\"Rockwell Automation\"/>\n<hostnames><hostname name=\"vfd-fill-1.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"44818\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"EtherNet-IP-2\" product=\"Rockwell PowerFlex 755\" version=\"15.002\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Rockwell embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014963\" endtime=\"1795014965\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.30.21\" addrtype=\"ipv4\"/>\n<address addr=\"00:00:BC:B1:B2:D1\" addrtype=\"mac\" vendor=\"Rockwell Automation\"/>\n<hostnames><hostname name=\"vfd-fill-2.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"44818\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"EtherNet-IP-2\" product=\"Rockwell PowerFlex 755\" version=\"15.002\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Rockwell embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014966\" endtime=\"1795014968\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.30.30\" addrtype=\"ipv4\"/>\n<address addr=\"08:61:95:7B:B2:B0\" addrtype=\"mac\" vendor=\"Rockwell Automation\"/>\n<hostnames><hostname name=\"io-fill.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"44818\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"EtherNet-IP-2\" product=\"Rockwell 1734-AENTR\" version=\"6.012\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Rockwell embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014969\" endtime=\"1795014971\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.30.40\" addrtype=\"ipv4\"/>\n<address addr=\"00:07:05:65:A6:07\" addrtype=\"mac\" vendor=\"Endress &amp; Hauser GmbH &amp; Co\"/>\n<hostnames><hostname name=\"flow-fill.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"44818\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"EtherNet-IP-2\" product=\"Endress+Hauser Promag 400\" version=\"01.05\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Endress+Hauser embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014972\" endtime=\"1795014974\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.2\" addrtype=\"ipv4\"/>\n<address addr=\"00:0E:8C:C7:A3:35\" addrtype=\"mac\" vendor=\"Siemens AG\"/>\n<hostnames><hostname name=\"sw-l2.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"80\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"http\" product=\"SCALANCE web\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"udp\" portid=\"161\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"snmp\" product=\"Siemens SCALANCE SNMP\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"23\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"telnet\" product=\"SCALANCE CLI\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Siemens embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014975\" endtime=\"1795014977\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.10\" addrtype=\"ipv4\"/>\n<address addr=\"00:1B:1B:56:80:FF\" addrtype=\"mac\" vendor=\"Siemens AG\"/>\n<hostnames><hostname name=\"plc-pack.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"102\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"iso-tsap\" product=\"Siemens S7-1500 CPU 1516-3 PN/DP\" version=\"V3.1\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"80\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"http\" product=\"Siemens S7-1500 web server\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"443\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"https\" product=\"Siemens S7-1500 web server\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Siemens embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014978\" endtime=\"1795014980\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.11\" addrtype=\"ipv4\"/>\n<address addr=\"00:0E:8C:9A:41:5E\" addrtype=\"mac\" vendor=\"Siemens AG\"/>\n<hostnames><hostname name=\"io-pack.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<\/ports>\n<os><osmatch name=\"Siemens embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014981\" endtime=\"1795014983\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.12\" addrtype=\"ipv4\"/>\n<address addr=\"08:00:06:EE:44:E1\" addrtype=\"mac\" vendor=\"SIEMENS AG\"/>\n<hostnames><hostname name=\"io-wrap.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<\/ports>\n<os><osmatch name=\"Siemens embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014984\" endtime=\"1795014986\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.20\" addrtype=\"ipv4\"/>\n<address addr=\"00:60:65:07:58:B1\" addrtype=\"mac\" vendor=\"B&amp;R Industrial Automation GmbH\"/>\n<hostnames><hostname name=\"plc-pallet.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"4840\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"opcua-tcp\" product=\"B&amp;R Automation Runtime OPC UA\" version=\"6.0\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"11169\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"pvi\" product=\"B&amp;R ANSL\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"21\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"ftp\" product=\"B&amp;R ftpd\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"B&amp;R embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014987\" endtime=\"1795014989\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.30\" addrtype=\"ipv4\"/>\n<address addr=\"3C:F7:D1:E3:EE:45\" addrtype=\"mac\" vendor=\"OMRON Corporation\"/>\n<hostnames><hostname name=\"plc-label.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"udp\" portid=\"9600\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"omron-fins\" product=\"Omron FINS\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"44818\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"EtherNet-IP-2\" product=\"OMRON NJ501-1300\" version=\"1.64\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Omron embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014990\" endtime=\"1795014992\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.40\" addrtype=\"ipv4\"/>\n<address addr=\"10:4B:46:FF:33:60\" addrtype=\"mac\" vendor=\"Mitsubishi Electric Corporation\"/>\n<hostnames><hostname name=\"plc-case.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"5007\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"melsec-q\" product=\"Mitsubishi MELSEC MC protocol\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"udp\" portid=\"5006\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"melsec-q\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Mitsubishi embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014993\" endtime=\"1795014995\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.40.50\" addrtype=\"ipv4\"/>\n<address addr=\"00:01:05:50:06:1F\" addrtype=\"mac\" vendor=\"Beckhoff Automation GmbH\"/>\n<hostnames><hostname name=\"plc-shrink.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"48898\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"ads\" product=\"Beckhoff TwinCAT ADS\" version=\"3.1\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"987\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"128\"/><service name=\"http\" product=\"Beckhoff device manager\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Microsoft Windows 10 1809 - 22H2\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014996\" endtime=\"1795014998\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.50.10\" addrtype=\"ipv4\"/>\n<address addr=\"00:07:68:BB:63:2C\" addrtype=\"mac\" vendor=\"Danfoss A/S\"/>\n<hostnames><hostname name=\"vfd-ammonia.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"502\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"modbus\" product=\"Danfoss MCA 122 Modbus TCP\" version=\"1.09\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"80\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"http\" product=\"Danfoss web\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Danfoss embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795014999\" endtime=\"1795015001\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.50.20\" addrtype=\"ipv4\"/>\n<address addr=\"00:10:8D:D3:EF:12\" addrtype=\"mac\" vendor=\"Johnson Controls, Inc.\"/>\n<hostnames><hostname name=\"ahu-ctrl.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"udp\" portid=\"47808\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"bacnet\" product=\"Johnson Controls FX-PCG\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Johnson Controls embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795015002\" endtime=\"1795015004\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.50.30\" addrtype=\"ipv4\"/>\n<address addr=\"00:30:DE:82:DA:FF\" addrtype=\"mac\" vendor=\"WAGO Kontakttechnik GmbH\"/>\n<hostnames><hostname name=\"boiler-plc.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"502\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"modbus\" product=\"WAGO 750-8101\" version=\"03.10\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"80\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"http\" product=\"lighttpd\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"22\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"ssh\" product=\"OpenSSH\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Linux 4.15 - 5.19\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795015005\" endtime=\"1795015007\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.50.40\" addrtype=\"ipv4\"/>\n<address addr=\"00:A0:45:77:F1:58\" addrtype=\"mac\" vendor=\"PHOENIX CONTACT Electronics GmbH\"/>\n<hostnames><hostname name=\"cip-skid.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"1962\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"pcworx\" product=\"Phoenix Contact PCWorx\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"502\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"modbus\" product=\"Phoenix Contact ILC 2050\" version=\"1.6\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"80\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"http\" product=\"Phoenix web\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Phoenix Contact embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<host starttime=\"1795015008\" endtime=\"1795015010\"><status state=\"up\" reason=\"arp-response\" reason_ttl=\"0\"/>\n<address addr=\"10.30.50.50\" addrtype=\"ipv4\"/>\n<address addr=\"00:80:F4:73:E8:F0\" addrtype=\"mac\" vendor=\"TELEMECANIQUE ELECTRIQUE\"/>\n<hostnames><hostname name=\"air-comp.plant.local\" type=\"PTR\"/><\/hostnames>\n<ports>\n<port protocol=\"tcp\" portid=\"502\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"modbus\" product=\"Schneider Electric TM241CEC24T\" version=\"5.1\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"21\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"ftp\" product=\"Schneider ftpd\" method=\"probed\" conf=\"10\"/><\/port>\n<port protocol=\"tcp\" portid=\"80\"><state state=\"open\" reason=\"syn-ack\" reason_ttl=\"64\"/><service name=\"http\" product=\"Schneider-WEB\" method=\"probed\" conf=\"10\"/><\/port>\n<\/ports>\n<os><osmatch name=\"Schneider embedded\" accuracy=\"94\" line=\"1\"/><\/os>\n<\/host>\n<runstats><finished time=\"1795015018\" elapsed=\"118\" exit=\"success\"/><hosts up=\"36\" down=\"726\" total=\"762\"/><\/runstats><\/nmaprun>\n", conv: "\"Address A\",\"Port A\",\"Address B\",\"Port B\",\"Packets\",\"Bytes\",\"Packets A \u2192 B\",\"Bytes A \u2192 B\",\"Packets B \u2192 A\",\"Bytes B \u2192 A\",\"Rel Start\",\"Duration\"\n\"10.30.10.11\",\"55303\",\"10.30.40.10\",\"102\",\"1800\",\"162000\",\"900\",\"76500\",\"900\",\"85500\",\"0.000000\",\"899.0104\"\n\"10.30.10.10\",\"57286\",\"10.30.10.11\",\"49320\",\"1804\",\"390265\",\"902\",\"251394\",\"902\",\"138871\",\"0.020848\",\"899.4724\"\n\"10.30.10.11\",\"50241\",\"10.30.30.10\",\"44818\",\"2702\",\"290864\",\"1351\",\"150382\",\"1351\",\"140482\",\"0.120848\",\"899.0687\"\n\"10.30.10.11\",\"52683\",\"10.30.30.11\",\"44818\",\"1802\",\"195464\",\"901\",\"101782\",\"901\",\"93682\",\"0.120848\",\"898.9502\"\n\"10.30.20.10\",\"58072\",\"10.30.30.11\",\"44818\",\"1802\",\"192764\",\"901\",\"99082\",\"901\",\"93682\",\"0.209374\",\"898.9894\"\n\"10.30.20.10\",\"59261\",\"10.30.30.10\",\"44818\",\"1802\",\"192764\",\"901\",\"99082\",\"901\",\"93682\",\"0.220848\",\"899.3639\"\n\"10.30.20.11\",\"57884\",\"10.30.40.10\",\"102\",\"1800\",\"176400\",\"900\",\"76500\",\"900\",\"99900\",\"0.252916\",\"899.0156\"\n\"10.30.10.11\",\"57594\",\"10.30.40.20\",\"4840\",\"904\",\"151769\",\"452\",\"91198\",\"452\",\"60571\",\"0.320848\",\"898.5993\"\n\"10.30.20.30\",\"47808\",\"10.30.50.20\",\"47808\",\"1442\",\"89399\",\"721\",\"42548\",\"721\",\"46851\",\"0.393313\",\"895.0356\"\n\"10.30.10.11\",\"61417\",\"10.30.50.10\",\"502\",\"900\",\"67050\",\"450\",\"29700\",\"450\",\"37350\",\"0.716096\",\"898.0285\"\n\"10.30.30.10\",\"2222\",\"10.30.30.20\",\"2222\",\"1799\",\"133126\",\"900\",\"66600\",\"899\",\"66526\",\"0.731735\",\"898.9984\"\n\"10.30.30.10\",\"2222\",\"10.30.30.21\",\"2222\",\"1799\",\"133126\",\"900\",\"66600\",\"899\",\"66526\",\"0.769038\",\"899.0016\"\n\"10.30.10.11\",\"58702\",\"10.30.50.30\",\"502\",\"900\",\"72450\",\"450\",\"29700\",\"450\",\"42750\",\"0.828603\",\"898.0044\"\n\"10.30.10.11\",\"9600\",\"10.30.40.30\",\"9600\",\"1800\",\"122400\",\"900\",\"54000\",\"900\",\"68400\",\"0.920067\",\"898.9916\"\n\"10.30.30.10\",\"2222\",\"10.30.30.30\",\"2222\",\"899\",\"66526\",\"450\",\"33300\",\"449\",\"33226\",\"1.056591\",\"898.0005\"\n\"10.30.10.11\",\"58038\",\"10.30.50.50\",\"502\",\"900\",\"65250\",\"450\",\"29700\",\"450\",\"35550\",\"1.335097\",\"898.0005\"\n\"10.30.20.11\",\"61831\",\"10.30.40.50\",\"48898\",\"360\",\"37440\",\"180\",\"18720\",\"180\",\"18720\",\"1.502610\",\"894.9729\"\n\"10.30.10.11\",\"63709\",\"10.30.50.40\",\"502\",\"900\",\"68850\",\"450\",\"29700\",\"450\",\"39150\",\"1.510101\",\"898.0180\"\n\"10.30.10.11\",\"56714\",\"10.30.40.40\",\"5007\",\"900\",\"72000\",\"450\",\"33750\",\"450\",\"38250\",\"1.840782\",\"898.0126\"\n\"10.30.10.20\",\"64062\",\"10.30.10.10\",\"5450\",\"180\",\"56520\",\"90\",\"15660\",\"90\",\"40860\",\"3.157490\",\"890.0005\"\n\"10.30.20.21\",\"123\",\"10.30.10.5\",\"123\",\"14\",\"1260\",\"7\",\"630\",\"7\",\"630\",\"3.336852\",\"766.8424\"\n\"10.30.10.20\",\"54161\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"5.437590\",\"0.0040\"\n\"10.30.40.50\",\"123\",\"10.30.10.5\",\"123\",\"14\",\"1260\",\"7\",\"630\",\"7\",\"630\",\"18.647076\",\"765.2027\"\n\"10.30.20.30\",\"47808\",\"10.30.20.255\",\"47808\",\"15\",\"810\",\"15\",\"810\",\"0\",\"0\",\"18.846053\",\"840.7044\"\n\"10.30.20.21\",\"59848\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"21.991597\",\"0.0040\"\n\"10.30.10.40\",\"50161\",\"10.30.30.2\",\"161\",\"90\",\"8119\",\"45\",\"3810\",\"45\",\"4309\",\"31.192048\",\"839.2283\"\n\"10.30.10.30\",\"123\",\"10.30.10.5\",\"123\",\"28\",\"2520\",\"14\",\"1260\",\"14\",\"1260\",\"31.675006\",\"832.8264\"\n\"10.30.10.10\",\"63632\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"35.263763\",\"0.0040\"\n\"10.30.10.20\",\"123\",\"10.30.10.5\",\"123\",\"14\",\"1260\",\"7\",\"630\",\"7\",\"630\",\"39.012595\",\"761.0498\"\n\"10.30.20.10\",\"54601\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"40.447426\",\"0.0040\"\n\"10.30.20.10\",\"123\",\"10.30.10.5\",\"123\",\"28\",\"2520\",\"14\",\"1260\",\"14\",\"1260\",\"44.302715\",\"836.7844\"\n\"10.30.20.11\",\"51605\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"46.095560\",\"0.0040\"\n\"10.30.20.30\",\"123\",\"10.30.10.5\",\"123\",\"14\",\"1260\",\"7\",\"630\",\"7\",\"630\",\"49.681832\",\"773.7357\"\n\"10.30.10.20\",\"50860\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"54.323700\",\"0.0040\"\n\"10.30.40.10\",\"123\",\"10.30.10.5\",\"123\",\"28\",\"2520\",\"14\",\"1260\",\"14\",\"1260\",\"55.082665\",\"837.6292\"\n\"10.30.10.40\",\"50161\",\"10.30.40.2\",\"161\",\"90\",\"8026\",\"45\",\"3810\",\"45\",\"4216\",\"58.498758\",\"840.6894\"\n\"10.30.10.11\",\"123\",\"10.30.10.5\",\"123\",\"28\",\"2520\",\"14\",\"1260\",\"14\",\"1260\",\"61.930564\",\"829.4515\"\n\"10.30.40.20\",\"123\",\"10.30.10.5\",\"123\",\"14\",\"1260\",\"7\",\"630\",\"7\",\"630\",\"62.003539\",\"765.9516\"\n\"10.30.20.20\",\"56384\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"69.153870\",\"0.0040\"\n\"10.30.20.11\",\"123\",\"10.30.10.5\",\"123\",\"14\",\"1260\",\"7\",\"630\",\"7\",\"630\",\"72.002686\",\"766.3458\"\n\"10.30.10.11\",\"62303\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"72.034620\",\"0.0040\"\n\"10.30.10.10\",\"123\",\"10.30.10.5\",\"123\",\"14\",\"1260\",\"7\",\"630\",\"7\",\"630\",\"74.277296\",\"767.2983\"\n\"10.30.20.21\",\"54227\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"78.723057\",\"0.0040\"\n\"10.30.20.10\",\"52473\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"90.553472\",\"0.0040\"\n\"10.30.20.20\",\"123\",\"10.30.10.5\",\"123\",\"14\",\"1260\",\"7\",\"630\",\"7\",\"630\",\"96.638620\",\"769.4944\"\n\"10.30.10.10\",\"56566\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"99.619534\",\"0.0040\"\n\"52.188.20.14\",\"55907\",\"10.30.10.30\",\"443\",\"246\",\"124528\",\"124\",\"48279\",\"122\",\"76249\",\"119.920848\",\"236.0772\"\n\"10.30.10.20\",\"49750\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"138.157181\",\"0.0040\"\n\"10.30.10.30\",\"64447\",\"10.30.20.20\",\"3389\",\"407\",\"217077\",\"204\",\"36863\",\"203\",\"180214\",\"149.920848\",\"122.2838\"\n\"10.30.20.21\",\"62953\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"151.610142\",\"0.0040\"\n\"10.30.10.10\",\"49863\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"158.691657\",\"0.0040\"\n\"10.30.20.10\",\"50327\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"167.872991\",\"0.0040\"\n\"10.30.20.11\",\"62821\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"167.969474\",\"0.0040\"\n\"10.30.20.20\",\"64451\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"181.604515\",\"0.0040\"\n\"10.30.10.20\",\"52130\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"192.604147\",\"0.0040\"\n\"10.30.20.21\",\"64810\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"210.563868\",\"0.0040\"\n\"10.30.10.10\",\"56473\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"211.072109\",\"0.0040\"\n\"10.30.20.10\",\"52028\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"213.190650\",\"0.0040\"\n\"10.30.10.11\",\"55759\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"225.616399\",\"0.0040\"\n\"10.30.10.20\",\"52293\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"240.911725\",\"0.0040\"\n\"10.30.20.20\",\"51477\",\"10.30.30.10\",\"44818\",\"23\",\"2134\",\"13\",\"1190\",\"10\",\"944\",\"254.920848\",\"5.8374\"\n\"10.30.20.20\",\"52799\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"258.070127\",\"0.0040\"\n\"10.30.20.21\",\"62180\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"259.780314\",\"0.0040\"\n\"10.30.20.10\",\"56562\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"272.559893\",\"0.0040\"\n\"10.30.10.10\",\"60503\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"285.982379\",\"0.0040\"\n\"10.30.10.20\",\"60143\",\"10.30.20.20\",\"445\",\"8\",\"700\",\"5\",\"394\",\"3\",\"306\",\"299.920848\",\"0.2034\"\n\"10.30.10.20\",\"63850\",\"10.30.20.10\",\"445\",\"8\",\"700\",\"5\",\"394\",\"3\",\"306\",\"301.920848\",\"0.2034\"\n\"10.30.20.11\",\"60098\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"303.915518\",\"0.0040\"\n\"10.30.10.20\",\"52686\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"316.800979\",\"0.0040\"\n\"10.30.20.21\",\"56902\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"329.373613\",\"0.0040\"\n\"10.30.10.11\",\"54285\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"342.014331\",\"0.0040\"\n\"10.30.20.20\",\"60228\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"345.449293\",\"0.0040\"\n\"10.30.10.10\",\"63077\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"348.215808\",\"0.0040\"\n\"10.30.20.10\",\"58424\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"348.595746\",\"0.0040\"\n\"10.30.10.20\",\"59689\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"358.170266\",\"0.0040\"\n\"10.30.20.11\",\"60454\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"391.369096\",\"0.0040\"\n\"10.30.20.21\",\"55321\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"393.164199\",\"0.0040\"\n\"10.30.20.10\",\"59119\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"397.401816\",\"0.0040\"\n\"10.30.10.10\",\"62733\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"413.634332\",\"0.0040\"\n\"10.30.10.11\",\"57065\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"422.430621\",\"0.0040\"\n\"10.30.10.20\",\"56858\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"424.154762\",\"0.0040\"\n\"10.30.40.99\",\"52044\",\"10.30.40.255\",\"44818\",\"1\",\"66\",\"1\",\"66\",\"0\",\"0\",\"425.920848\",\"0.0000\"\n\"10.30.40.30\",\"44818\",\"10.30.40.99\",\"52044\",\"1\",\"116\",\"1\",\"116\",\"0\",\"0\",\"425.930848\",\"0.0000\"\n\"10.30.40.99\",\"50430\",\"10.30.40.1\",\"80\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.920848\",\"0.0006\"\n\"10.30.40.99\",\"58741\",\"10.30.40.1\",\"102\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.924848\",\"0.0006\"\n\"10.30.40.99\",\"51467\",\"10.30.40.1\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.928848\",\"0.0006\"\n\"10.30.40.99\",\"62506\",\"10.30.40.1\",\"44818\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.932848\",\"0.0006\"\n\"10.30.40.99\",\"52995\",\"10.30.40.2\",\"80\",\"3\",\"170\",\"2\",\"112\",\"1\",\"58\",\"428.936848\",\"0.0012\"\n\"10.30.40.99\",\"56944\",\"10.30.40.2\",\"102\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.940848\",\"0.0006\"\n\"10.30.40.99\",\"50349\",\"10.30.40.2\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.944848\",\"0.0006\"\n\"10.30.40.99\",\"63391\",\"10.30.40.2\",\"44818\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.948848\",\"0.0006\"\n\"10.30.40.99\",\"57271\",\"10.30.40.10\",\"80\",\"3\",\"170\",\"2\",\"112\",\"1\",\"58\",\"428.952848\",\"0.0012\"\n\"10.30.40.99\",\"56518\",\"10.30.40.10\",\"102\",\"3\",\"170\",\"2\",\"112\",\"1\",\"58\",\"428.956848\",\"0.0012\"\n\"10.30.40.99\",\"63615\",\"10.30.40.10\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.960847\",\"0.0006\"\n\"10.30.40.99\",\"49455\",\"10.30.40.10\",\"44818\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.964847\",\"0.0006\"\n\"10.30.40.99\",\"57605\",\"10.30.40.11\",\"80\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.968847\",\"0.0006\"\n\"10.30.40.99\",\"64925\",\"10.30.40.11\",\"102\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.972847\",\"0.0006\"\n\"10.30.40.99\",\"53685\",\"10.30.40.11\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.976847\",\"0.0006\"\n\"10.30.40.99\",\"51164\",\"10.30.40.11\",\"44818\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.980847\",\"0.0006\"\n\"10.30.40.99\",\"49853\",\"10.30.40.12\",\"80\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.984847\",\"0.0006\"\n\"10.30.40.99\",\"58678\",\"10.30.40.12\",\"102\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.988847\",\"0.0006\"\n\"10.30.40.99\",\"62987\",\"10.30.40.12\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.992847\",\"0.0006\"\n\"10.30.40.99\",\"62826\",\"10.30.40.12\",\"44818\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"428.996847\",\"0.0006\"\n\"10.30.40.99\",\"51821\",\"10.30.40.20\",\"80\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.000847\",\"0.0006\"\n\"10.30.40.99\",\"64039\",\"10.30.40.20\",\"102\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.004847\",\"0.0006\"\n\"10.30.40.99\",\"56683\",\"10.30.40.20\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.008847\",\"0.0006\"\n\"10.30.40.99\",\"50657\",\"10.30.40.20\",\"44818\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.012847\",\"0.0006\"\n\"10.30.40.99\",\"61405\",\"10.30.40.30\",\"80\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.016847\",\"0.0006\"\n\"10.30.40.99\",\"55001\",\"10.30.40.30\",\"102\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.020847\",\"0.0006\"\n\"10.30.40.99\",\"54378\",\"10.30.40.30\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.024847\",\"0.0006\"\n\"10.30.40.99\",\"58095\",\"10.30.40.30\",\"44818\",\"3\",\"170\",\"2\",\"112\",\"1\",\"58\",\"429.028847\",\"0.0012\"\n\"10.30.40.99\",\"50989\",\"10.30.40.40\",\"80\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.032847\",\"0.0006\"\n\"10.30.40.99\",\"64658\",\"10.30.40.40\",\"102\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.036847\",\"0.0006\"\n\"10.30.40.99\",\"63426\",\"10.30.40.40\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.040846\",\"0.0006\"\n\"10.30.40.99\",\"51193\",\"10.30.40.40\",\"44818\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.044846\",\"0.0006\"\n\"10.30.40.99\",\"55837\",\"10.30.40.50\",\"80\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.048846\",\"0.0006\"\n\"10.30.40.99\",\"55643\",\"10.30.40.50\",\"102\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.052846\",\"0.0006\"\n\"10.30.40.99\",\"61128\",\"10.30.40.50\",\"502\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.056846\",\"0.0006\"\n\"10.30.40.99\",\"64854\",\"10.30.40.50\",\"44818\",\"2\",\"112\",\"1\",\"58\",\"1\",\"54\",\"429.060846\",\"0.0006\"\n\"10.30.20.20\",\"59798\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"430.883215\",\"0.0040\"\n\"10.30.20.21\",\"60455\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"437.980644\",\"0.0040\"\n\"10.30.10.10\",\"50685\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"451.395381\",\"0.0040\"\n\"10.30.20.10\",\"64338\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"461.210652\",\"0.0040\"\n\"10.30.40.99\",\"50849\",\"10.30.40.10\",\"102\",\"22\",\"1944\",\"12\",\"897\",\"10\",\"1047\",\"469.920848\",\"95.0016\"\n\"10.30.10.20\",\"60390\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"481.763439\",\"0.0040\"\n\"10.30.20.20\",\"54163\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"508.616905\",\"0.0040\"\n\"10.30.20.10\",\"57073\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"509.813324\",\"0.0040\"\n\"10.30.20.21\",\"60599\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"520.930531\",\"0.0040\"\n\"10.30.10.10\",\"51413\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"530.158847\",\"0.0040\"\n\"10.30.10.20\",\"61351\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"537.479268\",\"0.0040\"\n\"10.30.20.11\",\"56378\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"549.863284\",\"0.0040\"\n\"10.30.20.10\",\"53655\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"566.736571\",\"0.0040\"\n\"10.30.20.21\",\"62395\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"575.143258\",\"0.0040\"\n\"10.30.10.10\",\"63581\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"579.185573\",\"0.0040\"\n\"10.30.10.11\",\"53432\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"585.789641\",\"0.0040\"\n\"10.30.10.20\",\"62183\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"598.500802\",\"0.0040\"\n\"10.30.20.20\",\"54487\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"613.118032\",\"0.0040\"\n\"10.30.20.10\",\"58559\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"627.231232\",\"0.0040\"\n\"10.30.10.10\",\"56905\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"631.377676\",\"0.0040\"\n\"10.30.20.21\",\"50189\",\"10.30.40.10\",\"102\",\"14\",\"1036\",\"8\",\"561\",\"6\",\"475\",\"639.920848\",\"8.3354\"\n\"10.30.20.21\",\"62795\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"640.047270\",\"0.0040\"\n\"10.30.10.20\",\"56046\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"660.895655\",\"0.0040\"\n\"10.30.20.11\",\"57662\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"666.493357\",\"0.0040\"\n\"10.30.10.11\",\"59099\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"668.180070\",\"0.0040\"\n\"10.30.10.10\",\"60034\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"696.351702\",\"0.0040\"\n\"10.30.20.21\",\"56712\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"696.940565\",\"0.0040\"\n\"10.30.20.20\",\"50071\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"698.901045\",\"0.0040\"\n\"10.30.10.40\",\"50162\",\"10.30.30.2\",\"161\",\"2\",\"196\",\"1\",\"98\",\"1\",\"98\",\"699.920848\",\"0.0040\"\n\"10.30.20.10\",\"57465\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"710.034278\",\"0.0040\"\n\"10.30.10.20\",\"56646\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"719.227657\",\"0.0040\"\n\"10.30.20.21\",\"50095\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"746.914100\",\"0.0040\"\n\"10.30.10.10\",\"56727\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"759.613284\",\"0.0040\"\n\"10.30.20.10\",\"56599\",\"10.30.10.5\",\"53\",\"2\",\"220\",\"1\",\"88\",\"1\",\"132\",\"759.920848\",\"0.0040\"\n\"10.30.20.10\",\"50169\",\"13.107.4.50\",\"443\",\"86\",\"52942\",\"44\",\"16885\",\"42\",\"36057\",\"760.120848\",\"11.8397\"\n\"10.30.20.11\",\"61045\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"760.181153\",\"0.0040\"\n\"10.30.20.10\",\"53021\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"768.275101\",\"0.0040\"\n\"10.30.10.20\",\"55149\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"780.072415\",\"0.0040\"\n\"10.30.20.21\",\"62162\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"804.069720\",\"0.0040\"\n\"10.30.20.20\",\"56329\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"809.133586\",\"0.0040\"\n\"10.30.20.10\",\"63588\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"810.619309\",\"0.0040\"\n\"10.30.10.10\",\"62271\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"813.827966\",\"0.0040\"\n\"10.30.10.11\",\"64435\",\"10.30.10.5\",\"53\",\"2\",\"193\",\"1\",\"79\",\"1\",\"114\",\"813.978797\",\"0.0040\"\n\"10.30.10.20\",\"62058\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"834.598970\",\"0.0040\"\n\"10.30.20.21\",\"62370\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"873.426457\",\"0.0040\"\n\"10.30.10.10\",\"63862\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"880.413750\",\"0.0040\"\n\"10.30.20.10\",\"51777\",\"10.30.10.5\",\"53\",\"2\",\"196\",\"1\",\"80\",\"1\",\"116\",\"886.282121\",\"0.0040\"\n\"10.30.20.11\",\"64722\",\"10.30.10.5\",\"53\",\"2\",\"199\",\"1\",\"81\",\"1\",\"118\",\"890.705720\",\"0.0040\"\n\"10.30.20.20\",\"62569\",\"10.30.10.5\",\"53\",\"2\",\"211\",\"1\",\"85\",\"1\",\"126\",\"894.359370\",\"0.0040\"\n", zones: "# Lakeside Foods - intended zone design\n10.30.10.0/24 = L3 Site Operations\n10.30.20.0/24 = L2 Supervisory\n10.30.30.0/24 = L1 Line 1 Filling\n10.30.40.0/24 = L1 Line 2 Packaging\n10.30.50.0/24 = L1 Utilities", name: "Lakeside Foods sample plant"};
+const STORE_KEY = "sfmc-ot-segmentation-v3";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function ipToInt(ip){ const p = String(ip).trim().split("."); if (p.length !== 4) return null; let n = 0;
+  for (const x of p){ if (!/^\d{1,3}$/.test(x) || +x > 255) return null; n = n * 256 + (+x); } return n; }
+function parseCidr(s){ s = s.trim(); let [ip, bits] = s.split("/"); const base = ipToInt(ip); if (base === null) return null;
+  bits = bits === undefined ? 32 : parseInt(bits, 10); if (!(bits >= 0 && bits <= 32)) return null;
+  const size = Math.pow(2, 32 - bits); const start = Math.floor(base / size) * size; return {start, end:start + size - 1, bits, text: s}; }
+function isPrivate(ip){ const n = ipToInt(ip); if (n === null) return true;
+  const r = (a,b)=> n >= ipToInt(a) && n <= ipToInt(b);
+  return r("10.0.0.0","10.255.255.255") || r("172.16.0.0","172.31.255.255") || r("192.168.0.0","192.168.255.255") ||
+    r("100.64.0.0","100.127.255.255") || r("169.254.0.0","169.254.255.255") || r("127.0.0.0","127.255.255.255") || n >= ipToInt("224.0.0.0") || n === 0; }
+function isSpecial(ip){ const n = ipToInt(ip); return n === null || n >= ipToInt("224.0.0.0") || /\.255$/.test(ip) || n === 0; }
+function svcName(port){ return OT_PORTS[port] || IT_PORTS[port] || ("port " + port); }
+function isOT(port){ return Object.prototype.hasOwnProperty.call(OT_PORTS, port) && port !== 5450 && port !== 5457; }
+function sevRank(s){ const i = SEV_ORDER.indexOf(s); return i < 0 ? 9 : i; }
+function worst(a, b){ return sevRank(a) <= sevRank(b) ? a : b; }
+function sortIps(a, b){ return (ipToInt(a) || 0) - (ipToInt(b) || 0); }
+function readFile(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsText(file); }); }
+function download(name, text, type){ const b = new Blob([text], {type}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+function plural(n, w){ return n + " " + w + (n === 1 ? "" : "s"); }
+
+// ---------------------------------------------------------------------------
+// Parsers
+// ---------------------------------------------------------------------------
+function parseNmap(xml){
+  if (!xml || !xml.trim()) return {hosts: [], error: null};
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  if (doc.getElementsByTagName("parsererror").length) return {hosts: [], error: "The Nmap input isn't valid XML. Use the file from nmap -oX (not the normal text output)."};
+  if (!doc.getElementsByTagName("nmaprun").length) return {hosts: [], error: "This XML doesn't look like Nmap output (no <nmaprun> element)."};
+  const hosts = [];
+  for (const h of Array.from(doc.getElementsByTagName("host"))){
+    const st = h.getElementsByTagName("status")[0]; if (st && st.getAttribute("state") === "down") continue;
+    let ip = null, mac = null, vendor = null;
+    for (const a of Array.from(h.getElementsByTagName("address"))){
+      if (a.getAttribute("addrtype") === "ipv4") ip = a.getAttribute("addr");
+      if (a.getAttribute("addrtype") === "mac"){ mac = a.getAttribute("addr"); vendor = a.getAttribute("vendor"); }
+    }
+    if (!ip) continue;
+    const hn = h.getElementsByTagName("hostname")[0];
+    const om = h.getElementsByTagName("osmatch")[0];
+    const ports = [];
+    for (const p of Array.from(h.getElementsByTagName("port"))){
+      const s = p.getElementsByTagName("state")[0]; if (!s || s.getAttribute("state") !== "open") continue;
+      const sv = p.getElementsByTagName("service")[0];
+      ports.push({port: +p.getAttribute("portid"), proto: p.getAttribute("protocol"), service: sv ? sv.getAttribute("name") : "",
+        product: sv ? [sv.getAttribute("product"), sv.getAttribute("version")].filter(Boolean).join(" ") : ""});
+    }
+    hosts.push({ip, mac, vendor, name: hn ? hn.getAttribute("name") : "", os: om ? om.getAttribute("name") : "", ports});
+  }
+  return {hosts, error: hosts.length ? null : "No live hosts found in the Nmap XML."};
+}
+
+function parseCsvLine(line){
+  const out = []; let cur = "", q = false;
+  for (let i = 0; i < line.length; i++){
+    const c = line[i];
+    if (q){ if (c === '"'){ if (line[i+1] === '"'){ cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true; else if (c === "," || c === "\t") { out.push(cur); cur = ""; } else cur += c;
+  }
+  out.push(cur); return out.map(s => s.trim());
+}
+function parseConversations(text){
+  if (!text || !text.trim()) return {flows: [], error: null, skipped: 0};
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  let cols = null, flows = [], skipped = 0;
+  const find = (hdr, res) => hdr.findIndex(h => res.some(r => r.test(h)));
+  for (const line of lines){
+    const cells = parseCsvLine(line);
+    const lower = cells.map(c => c.toLowerCase());
+    if (lower.some(c => /^(address a|src|source|src ip|source address|id\.orig_h)$/.test(c))){
+      cols = {
+        a: find(lower, [/^address a$/, /^src( ip)?$/, /^source( address| ip)?$/, /^id\.orig_h$/]),
+        pa: find(lower, [/^port a$/, /^src ?port$/, /^source port$/, /^sport$/, /^id\.orig_p$/]),
+        b: find(lower, [/^address b$/, /^dst( ip)?$/, /^destination( address| ip)?$/, /^id\.resp_h$/]),
+        pb: find(lower, [/^port b$/, /^dst ?port$/, /^destination port$/, /^dport$/, /^id\.resp_p$/]),
+        pk: find(lower, [/^packets$/, /^total packets$/, /^pkts$/]),
+        by: find(lower, [/^bytes$/, /^total bytes$/]),
+        pr: find(lower, [/^protocol$/, /^proto$/, /^transport$/])
+      };
+      continue;
+    }
+    if (!cols || cols.a < 0 || cols.b < 0){ skipped++; continue; }
+    const a = cells[cols.a], b = cells[cols.b];
+    if (ipToInt(a) === null || ipToInt(b) === null){ skipped++; continue; }
+    const num = i => i >= 0 && cells[i] !== undefined ? parseInt(String(cells[i]).replace(/[^\d]/g, ""), 10) || 0 : 0;
+    const bytesRaw = cols.by >= 0 ? String(cells[cols.by] || "") : "";
+    let bytes = num(cols.by); if (/k/i.test(bytesRaw)) bytes = Math.round(parseFloat(bytesRaw) * 1000); else if (/m/i.test(bytesRaw)) bytes = Math.round(parseFloat(bytesRaw) * 1e6);
+    flows.push({a, pa: num(cols.pa), b, pb: num(cols.pb), packets: num(cols.pk) || 1, bytes, proto: cols.pr >= 0 ? (cells[cols.pr] || "").toUpperCase() : ""});
+  }
+  if (!cols) return {flows: [], error: "No header row found in the conversations data. Copy it from Wireshark with Copy → As CSV so the first line has \"Address A\", \"Port A\", \"Address B\", \"Port B\".", skipped};
+  return {flows, error: flows.length ? null : "No conversations could be read from the CSV.", skipped};
+}
+
+function parseZones(text){
+  const rules = [], errors = [];
+  (text || "").split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.replace(/#.*/, "").trim(); if (!line) return;
+    const m = line.match(/^([\d./]+)\s*[=:,\t]\s*(\S+)\s*(.*)$/);
+    if (!m){ errors.push("Line " + (i+1) + ": expected \"subnet = LEVEL name\""); return; }
+    const cidr = parseCidr(m[1]); if (!cidr){ errors.push("Line " + (i+1) + ": \"" + m[1] + "\" isn't a valid IP or subnet"); return; }
+    const level = LEVEL_ALIASES[m[2].toUpperCase().replace(/^LEVEL\s*/, "L")];
+    if (!level){ errors.push("Line " + (i+1) + ": unknown level \"" + m[2] + "\" (use L1, L2, L3, DMZ, ENT, SIS or PARTNER)"); return; }
+    const name = (m[3] || "").trim() || (LEVELS[level].band + " " + cidr.text);
+    rules.push({cidr, level, name, key: level + "|" + name});
+  });
+  return {rules, errors};
+}
+
+// ---------------------------------------------------------------------------
+// Model
+// ---------------------------------------------------------------------------
+let STATE = {nmapText: "", convText: "", zoneText: "", overrides: {}, nmapName: "", convName: "", ran: false, savedAt: null};
+let MODEL = null;
+
+function classifyFlow(f){
+  const knownA = !!(OT_PORTS[f.pa] || IT_PORTS[f.pa]), knownB = !!(OT_PORTS[f.pb] || IT_PORTS[f.pb]);
+  let client, server, port, cport;
+  if (knownB && !knownA){ client = f.a; server = f.b; port = f.pb; cport = f.pa; }
+  else if (knownA && !knownB){ client = f.b; server = f.a; port = f.pa; cport = f.pb; }
+  else if (knownA && knownB && f.pa !== f.pb){ // both well known: the lower is the service (e.g. 1502<->1502 handled below)
+    if (OT_PORTS[f.pb] && !OT_PORTS[f.pa]){ client = f.a; server = f.b; port = f.pb; cport = f.pa; }
+    else if (OT_PORTS[f.pa] && !OT_PORTS[f.pb]){ client = f.b; server = f.a; port = f.pa; cport = f.pb; }
+    else if (f.pb <= f.pa){ client = f.a; server = f.b; port = f.pb; cport = f.pa; } else { client = f.b; server = f.a; port = f.pa; cport = f.pb; }
+  }
+  else if (f.pa === f.pb){ client = f.a; server = f.b; port = f.pb; cport = f.pa; }
+  else if (f.pb <= f.pa){ client = f.a; server = f.b; port = f.pb; cport = f.pa; } else { client = f.b; server = f.a; port = f.pa; cport = f.pb; }
+  const proto = f.proto || "";
+  return {client, server, port, cport, packets: f.packets, bytes: f.bytes, proto, service: svcName(port), ot: isOT(port),
+    probe: f.packets <= 3 && proto !== "UDP" && !(port === 53 || port === 123 || port === 161 || port === 47808 || port === 514 || port === 2222)};
+}
+
+function buildModel(){
+  const nm = parseNmap(STATE.nmapText), cv = parseConversations(STATE.convText), zr = parseZones(STATE.zoneText);
+  const msgs = [];
+  if (nm.error && STATE.nmapText.trim()) msgs.push(["warn", nm.error]);
+  if (cv.error && STATE.convText.trim()) msgs.push(["warn", cv.error]);
+  zr.errors.forEach(e => msgs.push(["warn", "Zones — " + e]));
+  const hosts = new Map();
+  const getHost = ip => { if (!hosts.has(ip)) hosts.set(ip, {ip, mac:"", vendor:"", name:"", os:"", ports:[], inNmap:false, flowsAsClient:0, flowsAsServer:0, otServer:new Set(), otClient:new Set(), peers:new Set(), packets:0}); return hosts.get(ip); };
+  for (const h of nm.hosts){ const H = getHost(h.ip); Object.assign(H, {mac: h.mac || "", vendor: h.vendor || "", name: h.name || "", os: h.os || "", ports: h.ports, inNmap: true}); }
+  const flows = cv.flows.map(classifyFlow).filter(f => !isSpecial(f.client) && !isSpecial(f.server) && f.client !== f.server);
+  for (const f of flows){
+    const C = getHost(f.client), S = getHost(f.server);
+    C.flowsAsClient++; S.flowsAsServer++; C.peers.add(f.server); S.peers.add(f.client); C.packets += f.packets; S.packets += f.packets;
+    if (f.ot && !f.probe){ S.otServer.add(f.service); C.otClient.add(f.service); }
+  }
+  // routers: one MAC answering for several IPs in the Nmap scan
+  const macCount = {}; for (const h of hosts.values()) if (h.mac) macCount[h.mac.toUpperCase()] = (macCount[h.mac.toUpperCase()] || 0) + 1;
+  for (const h of hosts.values()) h.router = !!(h.mac && macCount[h.mac.toUpperCase()] > 1);
+
+  // zones
+  const zones = new Map();
+  const addZone = (key, level, name, cidrText) => { if (!zones.has(key)) zones.set(key, {key, level, name, cidrs: new Set(), hosts: []}); const z = zones.get(key); if (cidrText) z.cidrs.add(cidrText); return z; };
+  for (const r of zr.rules) addZone(r.key, r.level, r.name, r.cidr.text);
+  const zoneFor = ip => {
+    if (STATE.overrides[ip] && zones.has(STATE.overrides[ip])) return zones.get(STATE.overrides[ip]);
+    const n = ipToInt(ip); let best = null;
+    for (const r of zr.rules) if (n >= r.cidr.start && n <= r.cidr.end && (!best || r.cidr.bits > best.cidr.bits)) best = r;
+    if (best) return zones.get(best.key);
+    if (!isPrivate(ip)) return addZone("INTERNET|Internet", "INTERNET", "Internet");
+    return addZone("UNASSIGNED|Unassigned", "UNASSIGNED", "Unassigned");
+  };
+  for (const h of hosts.values()){ h.zone = zoneFor(h.ip); h.zone.hosts.push(h); }
+  for (const f of flows){ f.cz = hosts.get(f.client).zone; f.sz = hosts.get(f.server).zone; }
+  return {hosts, flows, zones, rules: zr.rules, msgs, nmapCount: nm.hosts.length, flowCount: flows.length, hasNmap: nm.hosts.length > 0, hasFlows: flows.length > 0, skipped: cv.skipped};
+}
+
+// ---------------------------------------------------------------------------
+// Checks
+// ---------------------------------------------------------------------------
+const PAIR_RULES = [
+  // [client level(s), server level(s), severity, title, why, refs] - evaluated both directions
+  [["INTERNET"], ["L1","L2","SIS"], "Critical", "Internet traffic reaches a control zone",
+   "Control and supervisory systems are exchanging traffic directly with internet addresses. Nothing in Levels 0–2 should have a path to or from the internet; that is the single most exploited OT exposure.",
+   "IEC 62443-3-3 SR 5.1, SR 1.13 · ATT&CK T0883 Internet Accessible Device, T0822 External Remote Services · M0930, M0937"],
+  [["INTERNET"], ["L3"], "High", "Internet traffic reaches the operations zone without passing through a DMZ",
+   "Level 3 systems are talking straight to the internet. Anything that needs outside access (patches, cloud historians, vendor support) should be brokered by a server in the industrial DMZ.",
+   "IEC 62443-3-3 SR 5.1, SR 5.2 · ATT&CK T0883, T0822 · M0930"],
+  [["ENT"], ["L1","L2","SIS"], "High", "Enterprise IT talks directly to control systems",
+   "Business-network hosts reach Level 0–2 without going through Level 3 or the DMZ. A compromise on the IT side can reach controllers in one hop.",
+   "IEC 62443-3-3 SR 5.1, SR 5.2 · ATT&CK T0886 Remote Services · M0930, M0937"],
+  [["ENT"], ["L3"], "Medium", "Enterprise IT talks to operations without a DMZ",
+   "Traffic between Level 4 and Level 3 should terminate in the industrial DMZ (replicated historian, patch server, remote-access gateway) rather than cross directly.",
+   "IEC 62443-3-3 SR 5.2 · M0930"],
+  [["DMZ"], ["L1","SIS"], "High", "The DMZ reaches Level 0–1 directly",
+   "DMZ servers should only talk to Level 3 (and, for remote access, Level 2). Direct DMZ-to-controller paths defeat the purpose of the DMZ.",
+   "IEC 62443-3-3 SR 5.2 · M0930"],
+  [["PARTNER"], ["L1","L2","SIS"], "Medium", "A third-party connection terminates inside a control zone",
+   "An external partner network (vendor, utility, remote site) connects straight into Level 0–2. Confirm this is a documented, filtered conduit with an agreed protocol list, or terminate it in the DMZ.",
+   "IEC 62443-3-3 SR 1.13, SR 5.2 · ATT&CK T0822 · M0937, M0807"],
+  [["L1"], ["L1"], "Medium", "Control cells talk to each other",
+   "Two different Level 0–1 zones exchange traffic. Cells are normally isolated so a problem in one cell can't spread to the next; cross-cell paths should be explicit and filtered.",
+   "IEC 62443-3-3 SR 5.1 · M0930"],
+  [["L3"], ["L1"], "Low", "Operations polls Level 1 directly (skips Level 2)",
+   "Level 3 systems (often OPC servers or historians) talk straight to controllers. This is common and can be acceptable, but each path should be documented and limited to the specific hosts and protocols involved.",
+   "IEC 62443-3-3 SR 5.1 · M0937"],
+  [["DMZ"], ["L2"], "Low", "The DMZ reaches Level 2",
+   "Acceptable when it is the designed remote-access path (a jump host or gateway in the DMZ connecting to engineering workstations). Anything else should stop at Level 3.",
+   "IEC 62443-3-3 SR 5.2 · M0930"],
+];
+
+function runChecks(M){
+  const F = [];
+  const add = f => F.push(Object.assign({hosts: [], rows: [], refs: ""}, f));
+  const sessions = M.flows.filter(f => !f.probe);
+  // 1. zone-pair rules, grouped per conduit
+  const conduits = new Map();
+  for (const f of M.flows){
+    if (f.cz === f.sz) continue;
+    const k = f.cz.key + "→" + f.sz.key;
+    if (!conduits.has(k)) conduits.set(k, {from: f.cz, to: f.sz, flows: [], sessions: [], services: new Set(), sev: null, finding: null});
+    const c = conduits.get(k); c.flows.push(f); if (!f.probe){ c.sessions.push(f); c.services.add(f.service); }
+  }
+  M.conduits = conduits;
+  const pairFindings = new Map();
+  for (const c of conduits.values()){
+    if (!c.sessions.length) continue;
+    const a = c.from.level, b = c.to.level;
+    for (const r of PAIR_RULES){
+      const fwd = r[0].includes(a) && r[1].includes(b), rev = r[0].includes(b) && r[1].includes(a);
+      if (!fwd && !rev) continue;
+      if (a === "UNASSIGNED" || b === "UNASSIGNED") continue;
+      c.sev = c.sev ? worst(c.sev, r[2]) : r[2];
+      if (!pairFindings.has(r[3])) pairFindings.set(r[3], {sev: r[2], title: r[3], why: r[4], refs: r[5], conduits: []});
+      pairFindings.get(r[3]).conduits.push(c);
+      break;
+    }
+    if (!c.sev) c.sev = "ok";
+  }
+  for (const p of pairFindings.values()){
+    const rows = [], hosts = new Set();
+    for (const c of p.conduits) for (const f of c.sessions){ rows.push(flowRow(f)); hosts.add(f.client); hosts.add(f.server); }
+    add({sev: p.sev, cat: "Conduit", title: p.title, summary: p.conduits.map(c => c.from.name + " → " + c.to.name + " (" + Array.from(c.services).slice(0,6).join(", ") + ")").join("; "),
+      why: p.why, refs: p.refs, hosts: Array.from(hosts), rows: dedupeRows(rows),
+      fix: "Block the path at the zone boundary firewall, or document it as an allowed conduit limited to the specific hosts and ports shown. Route anything that must cross IT/OT through the DMZ."});
+  }
+  // 2. protocol overlays on cross-zone sessions
+  const cross = sessions.filter(f => f.cz !== f.sz && !["INTERNET"].includes(f.sz.level));
+  const ctl = z => ["L1","L2","SIS"].includes(z.level);
+  const remote = cross.filter(f => REMOTE_PORTS.has(f.port) && ctl(f.sz));
+  if (remote.length){
+    const outside = remote.filter(f => f.cz.level !== "DMZ");
+    add({sev: outside.some(f => ["INTERNET","ENT","PARTNER"].includes(f.cz.level)) ? "High" : outside.length ? "Medium" : "Info", cat: "Remote access",
+      title: outside.length ? "Remote-access sessions into control zones that don't come from the DMZ" : "Remote access into control zones comes through the DMZ",
+      summary: plural(remote.length, "session") + " (" + Array.from(new Set(remote.map(f => f.service))).join(", ") + ") from " + Array.from(new Set(remote.map(f => f.cz.name))).join(", "),
+      why: "Interactive access (RDP, VNC, SSH, Telnet, remote-support tools) into Levels 0–2 should arrive through a single remote-access gateway in the DMZ with MFA, recording and time-limited approval.",
+      refs: "IEC 62443-3-3 SR 1.13, SR 2.6 · ATT&CK T0886 Remote Services, T0822 · M0932, M0935",
+      hosts: uniq((outside.length ? outside : remote).flatMap(f => [f.client, f.server])), rows: dedupeRows(remote.map(flowRow)),
+      fix: "Terminate vendor and engineer access on a DMZ jump host or secure remote-access gateway, require MFA, and block RDP/VNC/SSH into control zones from anywhere else."});
+  }
+  const clear = cross.filter(f => CLEARTEXT_ADMIN.has(f.port) && ctl(f.sz));
+  if (clear.length) add({sev: "Medium", cat: "Protocol", title: "Cleartext management traffic crosses into control zones",
+    summary: plural(clear.length, "session") + " using " + Array.from(new Set(clear.map(f => f.service))).join(", "),
+    why: "Telnet, FTP, HTTP and SNMPv1/v2c send credentials and community strings in the clear. Carried across a zone boundary, they can be captured anywhere along the path.",
+    refs: "IEC 62443-3-3 SR 4.1, SR 1.5 · ATT&CK T0859 Valid Accounts, T1694.001 Default Credentials · M0942",
+    hosts: uniq(clear.flatMap(f => [f.client, f.server])), rows: dedupeRows(clear.map(flowRow)),
+    fix: "Switch to SSH, HTTPS and SNMPv3, or keep device management inside a dedicated management zone instead of crossing production conduits."});
+  const share = cross.filter(f => FILESHARE_PORTS.has(f.port) && ctl(f.sz));
+  if (share.length) add({sev: "Medium", cat: "Protocol", title: "Windows file sharing / RPC crosses into control zones",
+    summary: plural(share.length, "session") + " (" + Array.from(new Set(share.map(f => f.service))).join(", ") + ") from " + Array.from(new Set(share.map(f => f.cz.name))).join(", "),
+    why: "SMB and MS-RPC are the main way ransomware and worms move laterally. They should not cross from operations or IT into supervisory and control zones.",
+    refs: "IEC 62443-3-3 SR 5.1 · ATT&CK T0866 Exploitation of Remote Services · M0930, M0937",
+    hosts: uniq(share.flatMap(f => [f.client, f.server])), rows: dedupeRows(share.map(flowRow)),
+    fix: "Block 135/139/445 at the boundary. Move file transfers to a DMZ file-transfer server or an approved one-way mechanism."});
+  // 3. safety system access
+  for (const z of M.zones.values()){
+    if (z.level !== "SIS") continue;
+    const into = sessions.filter(f => f.sz === z && f.cz !== z);
+    if (!into.length) continue;
+    const srcs = uniq(into.map(f => f.client));
+    add({sev: srcs.length > 1 ? "High" : "Medium", cat: "Safety", title: srcs.length > 1 ? "More than one host from outside reaches the safety system “" + z.name + "”" : "A host outside the safety zone reaches “" + z.name + "”",
+      summary: plural(srcs.length, "source host") + ": " + srcs.join(", "),
+      why: "Safety instrumented systems should be reachable only from their dedicated engineering workstation, ideally through a separate, tightly filtered conduit. Extra sources are how TRITON reached a Triconex controller.",
+      refs: "IEC 61511 · IEC 62443-3-3 SR 5.1 · ATT&CK T0843 Program Download · M0930, M0807",
+      hosts: srcs.concat(uniq(into.map(f => f.server))), rows: dedupeRows(into.map(flowRow)),
+      fix: "Allow only the designated SIS engineering workstation to reach the safety controller, keep the key switch in RUN, and alert on any other source."});
+  }
+  // 4. hosts in traffic but not in the scan
+  if (M.hasNmap){
+    const unk = Array.from(M.hosts.values()).filter(h => !h.inNmap && isPrivate(h.ip) && !["PARTNER","INTERNET"].includes(h.zone.level) && (h.flowsAsClient + h.flowsAsServer) > 0);
+    if (unk.length){
+      const ot = unk.filter(h => h.otClient.size || h.otServer.size);
+      add({sev: ot.length ? "High" : "Medium", cat: "Asset", title: "Devices in the traffic that aren't in the Nmap scan",
+        summary: unk.map(h => h.ip + (h.otClient.size ? " (sends " + Array.from(h.otClient).join(", ") + ")" : "")).join("; "),
+        why: "These addresses exchanged traffic during the capture but did not answer the scan. They may be transient laptops, unmanaged devices, or something that should not be on the network at all.",
+        refs: "IEC 62443-3-3 SR 7.8 · ATT&CK T0864 Transient Cyber Asset, T0848 Rogue Master · M0930",
+        hosts: unk.map(h => h.ip), rows: unk.map(h => [h.ip, h.zone.name, Array.from(h.peers).sort(sortIps).slice(0,8).join(", ") + (h.peers.size > 8 ? " …" : ""), Array.from(new Set([...h.otClient, ...h.otServer])).join(", ") || "—", h.packets]),
+        rowHead: ["Host", "Zone", "Talked to", "OT protocols", "Packets"],
+        fix: "Identify the owner of each device. Enforce port security / 802.1X on control-network switches and keep a current asset register."});
+    }
+  }
+  // 5. scan-like behaviour
+  const probes = {};
+  for (const f of M.flows) if (f.probe){ (probes[f.client] = probes[f.client] || new Set()).add(f.server + ":" + f.port); }
+  const scanners = Object.entries(probes).filter(([, s]) => s.size >= 20);
+  if (scanners.length) add({sev: "High", cat: "Behaviour", title: "Port-scan pattern seen in the traffic",
+    summary: scanners.map(([ip, s]) => ip + " probed " + s.size + " host:port pairs").join("; "),
+    why: "A host opened many short connections to different hosts and ports. If this isn't a scheduled, approved scan, it is reconnaissance, and active scanning can crash fragile controllers.",
+    refs: "ATT&CK T0846 Remote System Discovery, T0846.001 Port Scan · M0930, M0937",
+    hosts: scanners.map(s => s[0]), rows: scanners.map(([ip, s]) => { const z = M.hosts.get(ip).zone; const tz = uniq(Array.from(s).map(x => M.hosts.get(x.split(":")[0]).zone.name)); const ports = uniq(Array.from(s).map(x => +x.split(":")[1])).sort((a,b)=>a-b); return [ip, z.name, s.size, tz.join(", "), ports.join(", ")]; }),
+    rowHead: ["Source", "Source zone", "Probes", "Zones probed", "Ports"],
+    fix: "Confirm whether the scan was authorised. Restrict which hosts may initiate connections into control zones and alert on scan patterns at the boundary."});
+  // 6. host-level checks from the scan
+  const hs = Array.from(M.hosts.values()).filter(h => h.inNmap && !h.router);
+  const otOpen = h => h.ports.filter(p => isOT(p.port));
+  const itHost = h => h.ports.some(p => HOST_IT_PORTS.has(p.port)) || /windows/i.test(h.os);
+  const wrongUp = hs.filter(h => ["ENT","DMZ"].includes(h.zone.level) && otOpen(h).length);
+  if (wrongUp.length) add({sev: "High", cat: "Placement", title: "OT services running in an IT or DMZ zone",
+    summary: wrongUp.map(h => h.ip + " (" + otOpen(h).map(p => svcName(p.port)).join(", ") + ")").join("; "),
+    why: "Hosts in the enterprise network or DMZ expose industrial protocols. Either a control device sits in the wrong zone, or an OT service is reachable from a less-trusted network.",
+    refs: "IEC 62443-3-3 SR 5.1 · ATT&CK T0883 · M0930",
+    hosts: wrongUp.map(h => h.ip), rows: wrongUp.map(hostRow), rowHead: HOST_HEAD,
+    fix: "Move the device into the correct control zone, or shut the OT service off on that host."});
+  const itInCtl = hs.filter(h => h.zone.level === "L1" && itHost(h));
+  if (itInCtl.length) add({sev: "Medium", cat: "Placement", title: "Windows / IT hosts inside a Level 0–1 zone",
+    summary: itInCtl.map(h => h.ip + (h.name ? " " + h.name : "")).join("; "),
+    why: "Hosts with Windows file sharing, RDP or VNC sit on the same segment as controllers. They are the usual stepping stone into a control cell.",
+    refs: "IEC 62443-3-3 SR 5.1 · ATT&CK T0886 · M0930",
+    hosts: itInCtl.map(h => h.ip), rows: itInCtl.map(hostRow), rowHead: HOST_HEAD,
+    fix: "Move workstations and servers to Level 2 or 3, or harden them (disable SMB/RDP) if they must stay in the cell."});
+  const conv = hs.filter(h => otOpen(h).length && h.ports.some(p => HOST_IT_PORTS.has(p.port)));
+  if (conv.length) add({sev: "Low", cat: "Placement", title: "Converged hosts expose both OT and IT services",
+    summary: conv.map(h => h.ip + (h.name ? " " + h.name : "")).join("; "),
+    why: "These hosts offer an industrial protocol and Windows services at the same time, so one compromise reaches both sides. Common for SCADA and OPC servers; worth hardening.",
+    refs: "IEC 62443-3-3 SR 7.7 · M0942",
+    hosts: conv.map(h => h.ip), rows: conv.map(hostRow), rowHead: HOST_HEAD,
+    fix: "Disable services the host doesn't need and restrict which zones may reach each service."});
+  const clr = hs.filter(h => ["L1","SIS"].includes(h.zone.level) && h.ports.some(p => [21,23].includes(p.port)));
+  if (clr.length) add({sev: "Low", cat: "Placement", title: "Telnet or FTP open on control devices",
+    summary: clr.map(h => h.ip + " (" + h.ports.filter(p => [21,23].includes(p.port)).map(p => svcName(p.port)).join(", ") + ")").join("; "),
+    why: "Cleartext management services on controllers are a frequent source of default and hard-coded credential exposure.",
+    refs: "IEC 62443-3-3 SR 4.1 · ATT&CK T1694.001 Default Credentials · M0942",
+    hosts: clr.map(h => h.ip), rows: clr.map(hostRow), rowHead: HOST_HEAD,
+    fix: "Turn off Telnet and FTP where the device allows it; otherwise restrict them to a management host."});
+  // 7. design gaps
+  const unassigned = Array.from(M.hosts.values()).filter(h => h.zone.level === "UNASSIGNED");
+  if (unassigned.length) add({sev: "Info", cat: "Design", title: "Hosts not covered by any zone rule",
+    summary: plural(unassigned.length, "host") + " fall outside your zone rules, so their traffic isn't checked against the design.",
+    why: "Add rules for these subnets (or use “Suggest zones from data”) to include them in the conduit checks.", refs: "IEC 62443-3-2 ZCR 3",
+    hosts: unassigned.map(h => h.ip), rows: unassigned.map(hostRow), rowHead: HOST_HEAD, fix: "Add zone rules for these addresses."});
+  if (!M.zones.size || !M.rules.length) add({sev: "Info", cat: "Design", title: "No zone rules defined", summary: "Every private host is unassigned, so no conduit checks ran.", why: "Enter your zones or click “Suggest zones from data”.", refs: "IEC 62443-3-2 ZCR 3", fix: "Define zones."});
+  if (!M.hasFlows) add({sev: "Info", cat: "Design", title: "No traffic data loaded", summary: "Only scan-based checks ran.", why: "Without a conversations export the tool can't see which zones actually talk to each other. Add the Wireshark Conversations CSV to check the conduits.", refs: "", fix: "Add a conversations export."});
+
+  F.sort((a, b) => sevRank(a.sev) - sevRank(b.sev));
+  F.forEach((f, i) => f.id = "SEG-" + String(i + 1).padStart(3, "0"));
+  return F;
+}
+const HOST_HEAD = ["Host", "Name", "Zone", "Open ports"];
+function hostRow(h){ return [h.ip, h.name || h.vendor || "", h.zone.name, h.ports.map(p => p.port + "/" + (OT_PORTS[p.port] || IT_PORTS[p.port] || p.service || "?")).join(", ")]; }
+function flowRow(f){ return [f.client, f.cz.name, f.server, f.sz.name, f.service + " (" + f.port + ")", f.packets]; }
+function dedupeRows(rows){ const m = new Map(); for (const r of rows){ const k = r.slice(0,5).join("|"); if (m.has(k)) m.get(k)[5] += r[5]; else m.set(k, r.slice()); } return Array.from(m.values()); }
+function uniq(a){ return Array.from(new Set(a)).sort(sortIps); }
+
+// ---------------------------------------------------------------------------
+// Zone suggestions
+// ---------------------------------------------------------------------------
+function suggestZones(){
+  const saved = STATE.zoneText; STATE.zoneText = "";
+  const M = buildModel(); STATE.zoneText = saved;
+  const nets = new Map();
+  for (const h of M.hosts.values()){
+    if (!isPrivate(h.ip) || h.router) continue;
+    const net = h.ip.split(".").slice(0,3).join(".") + ".0/24";
+    if (!nets.has(net)) nets.set(net, []); nets.get(net).push(h);
+  }
+  const lines = [], existing = parseZones(STATE.zoneText).rules;
+  const covered = net => { const c = parseCidr(net); return existing.some(r => r.cidr.start <= c.start && r.cidr.end >= c.end); };
+  for (const [net, hs] of Array.from(nets.entries()).sort((a,b) => sortIps(a[0].split("/")[0], b[0].split("/")[0]))){
+    if (covered(net)) continue;
+    const win = h => /windows/i.test(h.os) || h.ports.some(p => HOST_IT_PORTS.has(p.port));
+    const field = hs.filter(h => !win(h) && (h.ports.some(p => isOT(p.port)) || h.otServer.size)).length;
+    const l3 = hs.filter(h => h.ports.some(p => L3_SERVICE_PORTS.has(p.port))).length;
+    const otc = hs.filter(h => h.otClient.size).length;
+    const internet = hs.some(h => Array.from(h.peers).some(p => !isPrivate(p)));
+    let lvl, why;
+    if (!hs.some(h => h.inNmap) && M.hasNmap){ lvl = "PARTNER"; why = "seen only in traffic, never in the scan: an outside network?"; }
+    else if (field >= Math.max(1, hs.length / 2)){ lvl = "L1"; why = field + " of " + hs.length + " hosts serve OT protocols"; }
+    else if (l3 && !otc && internet){ lvl = "DMZ"; why = "servers with internet peers and no OT clients"; }
+    else if (l3){ lvl = "L3"; why = "database / historian / directory services"; }
+    else if (otc){ lvl = "L2"; why = otc + " host(s) initiate OT protocols"; }
+    else { lvl = "ENT"; why = "no OT activity seen"; }
+    lines.push(net + " = " + lvl + " " + (LEVELS[lvl].band) + " " + net.replace(".0/24", ".x") + "   # auto: " + why);
+  }
+  if (!lines.length){ $("#suggestNote").textContent = M.hosts.size ? "Every subnet is already covered." : "Load a scan or conversations first."; return; }
+  STATE.zoneText = (STATE.zoneText.trim() ? STATE.zoneText.trim() + "\n" : "") + lines.join("\n");
+  $("#zoneText").value = STATE.zoneText;
+  $("#suggestNote").textContent = "Added " + plural(lines.length, "rule") + ". Check and rename them before relying on the results.";
+  save();
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+function render(M, F){
+  $("#results").classList.remove("hidden");
+  const counts = {}; SEV_ORDER.forEach(s => counts[s] = 0); F.forEach(f => counts[f.sev]++);
+  const crossZone = M.flows.filter(f => f.cz !== f.sz && !f.probe).length;
+  const realZones = Array.from(M.zones.values()).filter(z => z.hosts.length && !["INTERNET","UNASSIGNED"].includes(z.level));
+  const cond = Array.from(M.conduits.values()).filter(c => c.sessions.length).length;
+  $("#metrics").innerHTML = [
+    [M.hosts.size, "Hosts", ""], [realZones.length, "Zones", ""], [cond, "Conduits in use", ""], [crossZone, "Cross-zone sessions", ""],
+    [counts.Critical, "Critical", "crit"], [counts.High, "High", "high"], [counts.Medium, "Medium", "med"], [counts.Low, "Low", "low"]
+  ].map(([n, l, c]) => `<div class="metric ${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+  const worstSev = F.find(f => f.sev !== "Info");
+  $("#verdict").innerHTML = !worstSev ? `<div class="banner ok">No segmentation problems found in the data provided. ${M.hasFlows ? "" : "Add a conversations export to check the conduits as well."}</div>`
+    : `<div class="banner ${["Critical","High"].includes(worstSev.sev) ? "warn" : "info"}"><b>${counts.Critical + counts.High} critical/high finding${counts.Critical + counts.High === 1 ? "" : "s"}.</b> Highest priority: ${esc(worstSev.title)}.</div>`;
+  const flagged = new Set(); F.filter(f => ["Critical","High","Medium"].includes(f.sev)).forEach(f => f.hosts.forEach(h => flagged.add(h)));
+  // zone map
+  let html = "";
+  for (const lvl of BAND_ORDER){
+    const zs = Array.from(M.zones.values()).filter(z => z.level === lvl && z.hosts.length);
+    if (!zs.length) continue;
+    html += `<div class="band"><div class="band-label">${esc(LEVELS[lvl].band)}<span>${esc(LEVELS[lvl].sub)}</span></div><div class="band-zones">`;
+    for (const z of zs){
+      const bad = z.hosts.some(h => flagged.has(h.ip));
+      const hs = z.hosts.slice().sort((a,b) => sortIps(a.ip, b.ip));
+      const shown = lvl === "INTERNET" ? hs.slice(0, 12) : hs;
+      html += `<div class="zone ${bad ? "flag" : ""}"><div class="zone-title">${esc(z.name)}</div><div class="zone-sub">${esc(Array.from(z.cidrs).join(", ") || (lvl === "INTERNET" ? "public addresses" : ""))} &middot; ${plural(z.hosts.length, "host")}</div><div class="chips">` +
+        shown.map(h => `<span class="chip ${flagged.has(h.ip) ? "bad" : (!h.inNmap && M.hasNmap && lvl !== "INTERNET" ? "unk" : "")}" title="${esc([h.name, h.vendor, h.os].filter(Boolean).join(" · ") || (h.inNmap ? "" : "not in Nmap scan"))}">${esc(h.ip)}</span>`).join("") +
+        (hs.length > shown.length ? `<span class="chip">+${hs.length - shown.length} more</span>` : "") + `</div></div>`;
+    }
+    html += `</div></div>`;
+  }
+  $("#zoneMap").innerHTML = html || `<div class="empty">No hosts loaded.</div>`;
+  // matrix
+  const mz = Array.from(M.zones.values()).filter(z => z.hosts.length).sort((a,b) => LEVELS[b.level].rank - LEVELS[a.level].rank || a.name.localeCompare(b.name));
+  if (!M.hasFlows){ $("#matrix").innerHTML = `<tr><td class="empty">Load a Wireshark conversations export to see which zones talk to each other.</td></tr>`; }
+  else {
+    let t = `<tr><th class="rowh">From ↓ / To →</th>` + mz.map(z => `<th title="${esc(z.name)}"><span class="lvl">${esc(LEVELS[z.level].label)}</span><br>${esc(z.name.length > 18 ? z.name.slice(0,17) + "…" : z.name)}</th>`).join("") + `</tr>`;
+    for (const a of mz){
+      t += `<tr><th class="rowh"><span class="lvl">${esc(LEVELS[a.level].label)}</span> ${esc(a.name)}</th>`;
+      for (const b of mz){
+        if (a === b){ const n = M.flows.filter(f => f.cz === a && f.sz === a && !f.probe).length; t += `<td class="self" title="Traffic inside the zone">${n || ""}</td>`; continue; }
+        const c = M.conduits.get(a.key + "→" + b.key);
+        if (!c){ t += `<td></td>`; continue; }
+        const n = c.sessions.length, p = c.flows.length - n;
+        const cls = n ? "s-" + (c.sev || "ok") : "s-Info";
+        t += `<td class="cell ${cls}" data-k="${esc(a.key + "→" + b.key)}" title="${esc(Array.from(c.services).join(", ") || "probes only")}">${n}${p ? `<span style="font-weight:400;font-size:10px;"> +${p}p</span>` : ""}</td>`;
+      }
+      t += `</tr>`;
+    }
+    $("#matrix").innerHTML = t;
+    $("#matrix").querySelectorAll("td.cell").forEach(td => td.addEventListener("click", () => showConduit(M, td.dataset.k)));
+  }
+  $("#conduitDetail").innerHTML = M.hasFlows ? `<p class="hint">Numbers are sessions; <b>+Np</b> counts short probe connections (scan traffic). Green = allowed by design, colour = the worst rule the conduit breaks.</p>` : "";
+  // findings
+  $("#findings").innerHTML = F.length ? F.map(f => `<details class="finding ${f.sev}"><summary><span class="tag ${f.sev}">${f.sev}</span><span class="fid">${f.id} · ${esc(f.cat)}</span><span class="ftitle">${esc(f.title)}</span></summary><div class="fbody">
+      <p><b>What we saw:</b> ${esc(f.summary)}</p><p><b>Why it matters:</b> ${esc(f.why)}</p><p><b>What to do:</b> ${esc(f.fix)}</p>
+      ${f.refs ? `<p class="refs">${esc(f.refs)}</p>` : ""}
+      ${f.rows.length ? `<div class="ev tbl-scroll" style="max-height:300px;"><table><tr>${(f.rowHead || ["Client", "Client zone", "Server", "Server zone", "Service", "Packets"]).map(h => `<th>${esc(h)}</th>`).join("")}</tr>${f.rows.slice(0, 200).map(r => `<tr>${r.map(c => `<td class="mono">${esc(c)}</td>`).join("")}</tr>`).join("")}</table></div>${f.rows.length > 200 ? `<p class="hint">Showing 200 of ${f.rows.length}. Export CSV for all rows.</p>` : ""}` : ""}
+    </div></details>`).join("") : `<div class="empty">No findings.</div>`;
+  renderHosts(M, flagged);
+  $("#statusLine").innerHTML = `${plural(M.nmapCount, "scanned host")} &middot; ${plural(M.flowCount, "conversation")} &middot; <b>${plural(F.filter(f => f.sev !== "Info").length, "finding")}</b>`;
+}
+function showConduit(M, k){
+  const c = M.conduits.get(k); if (!c) return;
+  const rows = dedupeRows(c.flows.map(f => flowRow(f).concat([]))).sort((a,b) => b[5] - a[5]);
+  $("#conduitDetail").innerHTML = `<div class="banner info"><b>${esc(c.from.name)} → ${esc(c.to.name)}</b>: ${plural(c.sessions.length, "session")}${c.flows.length > c.sessions.length ? ", " + plural(c.flows.length - c.sessions.length, "probe") : ""}. ${c.sev && c.sev !== "ok" ? "Rated <b>" + c.sev + "</b>." : "Allowed by the Purdue model."}</div>
+    <div class="tbl-scroll" style="max-height:300px;"><table><tr><th>Client</th><th>Client zone</th><th>Server</th><th>Server zone</th><th>Service</th><th>Packets</th></tr>${rows.map(r => `<tr>${r.map(x => `<td class="mono">${esc(x)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  $("#conduitDetail").scrollIntoView({behavior: "smooth", block: "nearest"});
+}
+function renderHosts(M, flagged){
+  const zones = Array.from(M.zones.values()).filter(z => !["INTERNET","UNASSIGNED"].includes(z.level));
+  const q = ($("#hostFilter").value || "").toLowerCase();
+  const hs = Array.from(M.hosts.values()).filter(h => isPrivate(h.ip)).sort((a,b) => sortIps(a.ip, b.ip));
+  const shown = hs.filter(h => !q || [h.ip, h.name, h.vendor, h.os, h.zone.name, h.mac].join(" ").toLowerCase().includes(q));
+  $("#hostCount").textContent = shown.length + " of " + hs.length + " internal hosts";
+  $("#hostTable").innerHTML = `<tr><th>IP</th><th>Name / vendor</th><th>Zone</th><th>Open ports (scan)</th><th>OT protocols (traffic)</th><th>Peers</th><th>Status</th></tr>` +
+    shown.map(h => `<tr><td class="mono">${esc(h.ip)}</td><td>${esc(h.name || "")}${h.vendor ? `<br><span class="hint">${esc(h.vendor)}</span>` : ""}${h.router ? `<br><span class="hint">router / firewall interface</span>` : ""}</td>
+      <td><select data-ip="${esc(h.ip)}"><option value="">${esc(STATE.overrides[h.ip] ? "(by rules)" : h.zone.name + " (by rules)")}</option>${zones.map(z => `<option value="${esc(z.key)}" ${STATE.overrides[h.ip] === z.key ? "selected" : ""}>${esc(LEVELS[z.level].label + " · " + z.name)}</option>`).join("")}</select></td>
+      <td class="mono" style="font-size:11px;">${esc(h.ports.map(p => p.port).join(", ")) || (h.inNmap ? "none" : "—")}</td>
+      <td style="font-size:11.5px;">${esc(Array.from(new Set([...h.otClient, ...h.otServer])).join(", ")) || "—"}</td>
+      <td class="mono">${h.peers.size}</td>
+      <td>${flagged.has(h.ip) ? `<span class="tag High">flagged</span>` : ""} ${!h.inNmap && M.hasNmap ? `<span class="tag Medium">not scanned</span>` : ""}</td></tr>`).join("");
+  $("#hostTable").querySelectorAll("select").forEach(s => s.addEventListener("change", () => {
+    if (s.value) STATE.overrides[s.dataset.ip] = s.value; else delete STATE.overrides[s.dataset.ip];
+    run();
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Export, persistence, wiring
+// ---------------------------------------------------------------------------
+let LAST = null;
+function csvCell(v){ v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function exportCsv(){
+  if (!LAST) return; const {M, F} = LAST; const out = [];
+  out.push(["OT Segmentation Checker report", new Date().toISOString()].map(csvCell).join(","), "");
+  out.push(["Finding", "Severity", "Category", "Title", "What we saw", "Why it matters", "What to do", "References", "Hosts"].map(csvCell).join(","));
+  for (const f of F) out.push([f.id, f.sev, f.cat, f.title, f.summary, f.why, f.fix, f.refs, f.hosts.join(" ")].map(csvCell).join(","));
+  out.push("", ["Conduit (from)", "From level", "Conduit (to)", "To level", "Rating", "Sessions", "Probes", "Services"].map(csvCell).join(","));
+  for (const c of M.conduits.values()) out.push([c.from.name, c.from.level, c.to.name, c.to.level, c.sessions.length ? (c.sev === "ok" ? "Allowed" : c.sev || "") : "Probes only", c.sessions.length, c.flows.length - c.sessions.length, Array.from(c.services).join("; ")].map(csvCell).join(","));
+  out.push("", ["IP", "Name", "Vendor", "MAC", "OS", "Zone", "Level", "Open ports", "OT protocols seen", "Peers", "In Nmap scan", "In a finding"].map(csvCell).join(","));
+  const flagged = new Set(); F.filter(f => ["Critical","High","Medium"].includes(f.sev)).forEach(f => f.hosts.forEach(h => flagged.add(h)));
+  for (const h of Array.from(M.hosts.values()).sort((a,b) => sortIps(a.ip, b.ip))) out.push([h.ip, h.name, h.vendor, h.mac, h.os, h.zone.name, h.zone.level, h.ports.map(p => p.port).join(" "), Array.from(new Set([...h.otClient, ...h.otServer])).join("; "), h.peers.size, h.inNmap ? "yes" : "no", flagged.has(h.ip) ? "yes" : "no"].map(csvCell).join(","));
+  download("ot_segmentation_report.csv", "﻿" + out.join("\r\n"), "text/csv");
+}
+function sessionJson(){ return JSON.stringify({tool: "OT Segmentation Checker", version: 3, savedAt: new Date().toISOString(), nmapName: STATE.nmapName, convName: STATE.convName,
+  zones: STATE.zoneText, overrides: STATE.overrides, nmapXml: STATE.nmapText, conversationsCsv: STATE.convText}, null, 1); }
+function loadSession(o){
+  if (!o || (o.tool && o.tool !== "OT Segmentation Checker")) throw new Error("not a Segmentation Checker session file");
+  STATE.nmapText = o.nmapXml || o.nmapText || ""; STATE.convText = o.conversationsCsv || o.convText || ""; STATE.zoneText = o.zones || o.zoneText || "";
+  STATE.overrides = o.overrides || {}; STATE.nmapName = o.nmapName || ""; STATE.convName = o.convName || "";
+  syncInputs();
+}
+function syncInputs(){ $("#nmapText").value = STATE.nmapText; $("#convText").value = STATE.convText; $("#zoneText").value = STATE.zoneText;
+  $("#nmapName").textContent = STATE.nmapName; $("#convName").textContent = STATE.convName; }
+function save(){ try { STATE.savedAt = new Date().toISOString(); const s = JSON.stringify(STATE); if (s.length < 4.5e6) localStorage.setItem(STORE_KEY, s); } catch (e) {} }
+function run(){
+  STATE.nmapText = $("#nmapText").value; STATE.convText = $("#convText").value; STATE.zoneText = $("#zoneText").value;
+  if (!STATE.nmapText.trim() && !STATE.convText.trim()){ $("#inputMsg").innerHTML = `<div class="banner warn">Load an Nmap scan, a conversations export, or both — or click <b>Load sample plant</b> to see how it works.</div>`; return; }
+  const M = buildModel(); const F = runChecks(M);
+  $("#inputMsg").innerHTML = M.msgs.map(([c, t]) => `<div class="banner ${c}">${esc(t)}</div>`).join("") + (M.skipped ? `<div class="banner info">${M.skipped} conversation line(s) couldn't be read and were skipped.</div>` : "");
+  LAST = {M, F}; STATE.ran = true; render(M, F); save();
+}
+async function loadFiles(input, key, nameEl){
+  const files = Array.from(input.files || []); if (!files.length) return;
+  const texts = await Promise.all(files.map(readFile));
+  if (key === "convText"){ STATE.convText = texts.join("\n"); STATE.convName = files.map(f => f.name).join(", "); }
+  else { STATE.nmapText = texts[0]; STATE.nmapName = files[0].name; }
+  syncInputs(); save();
+}
+function init(){
+  $("#nmapFile").addEventListener("change", e => loadFiles(e.target, "nmapText"));
+  $("#convFile").addEventListener("change", e => loadFiles(e.target, "convText"));
+  ["#nmapText", "#convText", "#zoneText"].forEach(s => $(s).addEventListener("change", () => { STATE.nmapText = $("#nmapText").value; STATE.convText = $("#convText").value; STATE.zoneText = $("#zoneText").value; save(); }));
+  $("#runBtn").addEventListener("click", run);
+  $("#suggestBtn").addEventListener("click", () => { STATE.nmapText = $("#nmapText").value; STATE.convText = $("#convText").value; STATE.zoneText = $("#zoneText").value; suggestZones(); });
+  $("#sampleBtn").addEventListener("click", () => { STATE = {nmapText: SAMPLE.nmap, convText: SAMPLE.conv, zoneText: SAMPLE.zones, overrides: {}, nmapName: "sample: Medium_Food_Bev_Plant_nmap.xml", convName: "sample: Medium_Food_Bev_Plant_conversations.csv", ran: false}; syncInputs(); run(); });
+  $("#clearBtn").addEventListener("click", () => { STATE = {nmapText: "", convText: "", zoneText: "", overrides: {}, nmapName: "", convName: "", ran: false}; syncInputs(); $("#results").classList.add("hidden"); $("#inputMsg").innerHTML = ""; $("#nmapFile").value = ""; $("#convFile").value = ""; try { localStorage.removeItem(STORE_KEY); } catch (e) {} $("#statusLine").innerHTML = "Runs entirely in your browser &middot; <b>nothing is uploaded</b>"; });
+  $("#csvBtn").addEventListener("click", exportCsv);
+  $("#jsonBtn").addEventListener("click", () => download("ot_segmentation_session.json", sessionJson(), "application/json"));
+  $("#printBtn").addEventListener("click", () => { document.querySelectorAll("details.finding").forEach(d => d.open = true); window.print(); });
+  $("#expandBtn").addEventListener("click", () => { const ds = document.querySelectorAll("details.finding"); const open = !Array.from(ds).every(d => d.open); ds.forEach(d => d.open = open); $("#expandBtn").textContent = open ? "Collapse all" : "Expand all"; });
+  $("#importBtn").addEventListener("click", () => $("#importFile").click());
+  $("#importFile").addEventListener("change", async e => { const f = e.target.files[0]; if (!f) return; try { loadSession(JSON.parse(await readFile(f))); run(); } catch (err) { $("#inputMsg").innerHTML = `<div class="banner warn">Couldn't import that file: ${esc(err.message)}</div>`; } e.target.value = ""; });
+  $("#hostFilter").addEventListener("input", () => { if (LAST){ const flagged = new Set(); LAST.F.filter(f => ["Critical","High","Medium"].includes(f.sev)).forEach(f => f.hosts.forEach(h => flagged.add(h))); renderHosts(LAST.M, flagged); } });
+  let saved = null; try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) {}
+  if (saved && (saved.nmapText || saved.convText || saved.zoneText)){
+    $("#restore-card").classList.remove("hidden");
+    $("#restoreWhen").textContent = saved.savedAt ? "Saved " + new Date(saved.savedAt).toLocaleString() + (saved.nmapName ? " · " + saved.nmapName : "") : "";
+    $("#restoreBtn").addEventListener("click", () => { STATE = Object.assign(STATE, saved); syncInputs(); $("#restore-card").classList.add("hidden"); if (saved.ran) run(); });
+    $("#dismissRestoreBtn").addEventListener("click", () => { $("#restore-card").classList.add("hidden"); try { localStorage.removeItem(STORE_KEY); } catch (e) {} });
+  }
+}
+init();
+</script>
+</body>
+</html>

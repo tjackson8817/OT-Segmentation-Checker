@@ -1,0 +1,3 @@
+# Riverbend Water Treatment - intended zones
+10.10.10.0/24 = L2 SCADA
+10.10.20.0/24 = L1 Control

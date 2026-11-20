@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sS -sU -sV -O -p T:21-23,80,102,443,445,502,789,1911,1962,2404,3389,4840,5007,5094,9600,18245,20000,44818,U:161,47808 10.50.1.0/24 10.50.10.0/24 10.50.20.0/24 10.50.30.0/24 10.50.40.0/24 10.50.50.0/24 10.50.60.0/24 10.50.70.0/24 10.200.5.0/24" start="1794701400" startstr="Sun Nov 15 00:10:00 2026" version="7.95" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="45" services="21-23,80,102,161,443,445,502,789,1911,1962,2222,2404,3389,4840,5007,5094,9600,18245,20000,44818,47808"/>
+<host starttime="1794701403" endtime="1794701405"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.1.1" addrtype="ipv4"/>
+<address addr="00:09:0F:D1:60:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-core (dmz).plant.local" type="PTR"/></hostnames>
+<ports>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701406" endtime="1794701408"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.10.1" addrtype="ipv4"/>
+<address addr="00:09:0F:D1:60:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-core (l3 ops).plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="Fortinet FortiGate admin" version="7.4.4" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701409" endtime="1794701411"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.20.1" addrtype="ipv4"/>
+<address addr="00:09:0F:D1:60:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-core (l2 control).plant.local" type="PTR"/></hostnames>
+<ports>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701412" endtime="1794701414"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.30.1" addrtype="ipv4"/>
+<address addr="00:09:0F:D1:60:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-core (unit 100).plant.local" type="PTR"/></hostnames>
+<ports>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701415" endtime="1794701417"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.40.1" addrtype="ipv4"/>
+<address addr="00:09:0F:D1:60:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-core (tank farm).plant.local" type="PTR"/></hostnames>
+<ports>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701418" endtime="1794701420"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.50.1" addrtype="ipv4"/>
+<address addr="00:09:0F:D1:60:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-core (cogen).plant.local" type="PTR"/></hostnames>
+<ports>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701421" endtime="1794701423"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.1" addrtype="ipv4"/>
+<address addr="00:09:0F:D1:60:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-core (substation).plant.local" type="PTR"/></hostnames>
+<ports>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701424" endtime="1794701426"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.70.1" addrtype="ipv4"/>
+<address addr="00:09:0F:D1:60:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-core (bms).plant.local" type="PTR"/></hostnames>
+<ports>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701427" endtime="1794701429"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.1.10" addrtype="ipv4"/>
+<address addr="00:50:56:CB:50:D1" addrtype="mac" vendor="VMware, Inc."/>
+<hostnames><hostname name="hist-dmz.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="5450"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="pi" product="AVEVA PI Data Archive" version="2023" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="https" product="Microsoft IIS httpd" version="10.0" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows Server 2022" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701430" endtime="1794701432"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.1.20" addrtype="ipv4"/>
+<address addr="00:50:56:2D:83:10" addrtype="mac" vendor="VMware, Inc."/>
+<hostnames><hostname name="patch-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="8530"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="http" product="Microsoft IIS httpd" version="10.0" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows Server 2022" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701433" endtime="1794701435"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.1.30" addrtype="ipv4"/>
+<address addr="00:50:56:3E:C8:46" addrtype="mac" vendor="VMware, Inc."/>
+<hostnames><hostname name="ra-gw.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="3389"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="ms-wbt-server" product="Microsoft Terminal Services" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="https" product="Microsoft IIS httpd" version="10.0" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows Server 2022" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701436" endtime="1794701438"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.10.10" addrtype="ipv4"/>
+<address addr="F0:1F:AF:94:02:D3" addrtype="mac" vendor="Dell Inc."/>
+<hostnames><hostname name="hist-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="5450"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="pi" product="AVEVA PI Data Archive" version="2023" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows Server 2019" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701439" endtime="1794701441"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.10.11" addrtype="ipv4"/>
+<address addr="00:50:56:13:75:6E" addrtype="mac" vendor="VMware, Inc."/>
+<hostnames><hostname name="opc-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="4840"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="opcua-tcp" product="PTC KEPServerEX OPC UA" version="6.15" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows Server 2019" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701442" endtime="1794701444"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.10.5" addrtype="ipv4"/>
+<address addr="00:50:56:4C:50:6A" addrtype="mac" vendor="VMware, Inc."/>
+<hostnames><hostname name="dc-02.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="53"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="domain" product="Simple DNS Plus" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="88"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="kerberos-sec" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows Server 2022" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701445" endtime="1794701447"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.10.40" addrtype="ipv4"/>
+<address addr="00:50:56:96:37:7F" addrtype="mac" vendor="VMware, Inc."/>
+<hostnames><hostname name="log-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ssh" product="OpenSSH" version="8.9p1" method="probed" conf="10"/></port>
+<port protocol="udp" portid="514"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="syslog" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701448" endtime="1794701450"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.20.10" addrtype="ipv4"/>
+<address addr="3C:D9:2B:80:7F:0A" addrtype="mac" vendor="Hewlett Packard"/>
+<hostnames><hostname name="scada-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="4840"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="opcua-tcp" product="SCADA OPC UA server" version="3.2" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows Server 2019" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701451" endtime="1794701453"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.20.11" addrtype="ipv4"/>
+<address addr="A4:BB:6D:8B:8C:41" addrtype="mac" vendor="Dell Inc."/>
+<hostnames><hostname name="ows-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows 10 1809 - 22H2" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701454" endtime="1794701456"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.20.12" addrtype="ipv4"/>
+<address addr="A4:BB:6D:B4:24:FC" addrtype="mac" vendor="Dell Inc."/>
+<hostnames><hostname name="ows-02.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows 10 1809 - 22H2" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701457" endtime="1794701459"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.20.30" addrtype="ipv4"/>
+<address addr="98:90:96:8A:47:3E" addrtype="mac" vendor="Dell Inc."/>
+<hostnames><hostname name="ews-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="3389"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="ms-wbt-server" product="Microsoft Terminal Services" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows 10 1809 - 22H2" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701460" endtime="1794701462"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.20.31" addrtype="ipv4"/>
+<address addr="8C:EC:4B:59:F8:2F" addrtype="mac" vendor="Dell Inc."/>
+<hostnames><hostname name="ews-02.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="3389"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="ms-wbt-server" product="Microsoft Terminal Services" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows 11 23H2" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701463" endtime="1794701465"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.20.40" addrtype="ipv4"/>
+<address addr="B0:83:FE:C0:13:A5" addrtype="mac" vendor="Dell Inc."/>
+<hostnames><hostname name="sis-ews.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows 10 1809 - 22H2" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701466" endtime="1794701468"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.30.10" addrtype="ipv4"/>
+<address addr="00:40:84:78:54:25" addrtype="mac" vendor="Honeywell"/>
+<hostnames><hostname name="plc-r100.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="Honeywell ControlEdge PLC" version="R170" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="4840"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="opcua-tcp" product="Honeywell ControlEdge OPC UA" version="R170" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="Honeywell ControlEdge Builder" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Honeywell embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701469" endtime="1794701471"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.30.11" addrtype="ipv4"/>
+<address addr="00:00:23:DC:01:36" addrtype="mac" vendor="ABB INDUSTRIAL SYSTEMS AB"/>
+<hostnames><hostname name="plc-feed.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="ABB AC500 PM5650" version="3.5.2" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="ABB AC500 web" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="1200"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="codesys" product="CODESYS V3" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="ABB embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701472" endtime="1794701474"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.30.12" addrtype="ipv4"/>
+<address addr="00:00:64:45:56:80" addrtype="mac" vendor="Yokogawa Digital Computer Corporation"/>
+<hostnames><hostname name="rtu-cool.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="Yokogawa STARDOM FCN" version="R4.20" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="21"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ftp" product="Yokogawa ftpd" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="23"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="telnet" product="Yokogawa telnetd" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Yokogawa embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701475" endtime="1794701477"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.30.20" addrtype="ipv4"/>
+<address addr="00:22:E5:0D:02:84" addrtype="mac" vendor="Fisher-Rosemount Systems Inc."/>
+<hostnames><hostname name="hart-gw.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="5094"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="hart-ip" product="Emerson HART-IP" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="Emerson gateway web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Emerson embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701478" endtime="1794701480"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.30.30" addrtype="ipv4"/>
+<address addr="00:20:96:0E:20:81" addrtype="mac" vendor="Invensys"/>
+<hostnames><hostname name="sis-tricon.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="udp" portid="1502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="tristation" product="Triconex TriStation" version="11.7" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Schneider (Triconex) embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701481" endtime="1794701483"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.40.10" addrtype="ipv4"/>
+<address addr="00:1D:9C:5D:C0:14" addrtype="mac" vendor="Rockwell Automation"/>
+<hostnames><hostname name="plc-tanks.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="44818"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="EtherNet-IP-2" product="Rockwell Automation 1756-L84E" version="35.011" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Rockwell web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Rockwell embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701484" endtime="1794701486"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.40.20" addrtype="ipv4"/>
+<address addr="00:0D:8D:4E:5E:20" addrtype="mac" vendor="Prosoft Technology, Inc"/>
+<hostnames><hostname name="gw-radar.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="44818"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="EtherNet-IP-2" product="ProSoft PLX32" version="1.5" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="ProSoft PLX32" version="1.5" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="ProSoft web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="ProSoft embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701487" endtime="1794701489"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.40.30" addrtype="ipv4"/>
+<address addr="00:90:E8:F8:D2:4C" addrtype="mac" vendor="MOXA TECHNOLOGIES CORP., LTD."/>
+<hostnames><hostname name="gw-serial.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="Moxa MGate MB3660" version="2.6" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="23"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="telnet" product="Moxa telnetd" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Moxa web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Moxa embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701490" endtime="1794701492"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.40.40" addrtype="ipv4"/>
+<address addr="00:07:05:E6:B2:D7" addrtype="mac" vendor="Endress &amp; Hauser GmbH &amp; Co"/>
+<hostnames><hostname name="tank-gauge.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="Endress+Hauser NXA820" version="1.07" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="E+H Tankvision" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Endress+Hauser embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701493" endtime="1794701495"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.50.10" addrtype="ipv4"/>
+<address addr="08:00:19:AE:13:F5" addrtype="mac" vendor="GENERAL ELECTRIC CORPORATION"/>
+<hostnames><hostname name="plc-cogen.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="18245"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ge-srtp" product="GE SRTP" version="10.30" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="GE web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="GE embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701496" endtime="1794701498"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.50.11" addrtype="ipv4"/>
+<address addr="00:1B:1B:EF:D7:0D" addrtype="mac" vendor="Siemens AG"/>
+<hostnames><hostname name="plc-hrsg.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="102"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="iso-tsap" product="Siemens S7-1500 CPU 1518-4" version="V3.1" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="Siemens web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Siemens embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701499" endtime="1794701501"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.50.20" addrtype="ipv4"/>
+<address addr="00:00:54:97:CB:DD" addrtype="mac" vendor="Schneider Electric"/>
+<hostnames><hostname name="meter-gen.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="Schneider ION9000" version="3.0" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="ION web" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="7700"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ion" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Schneider embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701502" endtime="1794701504"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.50.21" addrtype="ipv4"/>
+<address addr="00:00:54:67:EA:51" addrtype="mac" vendor="Schneider Electric"/>
+<hostnames><hostname name="meter-aux.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="Schneider ION9000" version="3.0" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="ION web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Schneider embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701505" endtime="1794701507"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.50.30" addrtype="ipv4"/>
+<address addr="00:30:A7:A2:F8:2B" addrtype="mac" vendor="SCHWEITZER ENGINEERING"/>
+<hostnames><hostname name="relay-gen.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="SEL-700G" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="23"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="telnet" product="SEL telnet" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="SEL embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701508" endtime="1794701510"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.2" addrtype="ipv4"/>
+<address addr="00:0A:DC:4F:4C:AE" addrtype="mac" vendor="RuggedCom Inc."/>
+<hostnames><hostname name="sw-sub.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ssh" product="RUGGEDCOM ssh" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="RUGGEDCOM ROS web" version="5.8" method="probed" conf="10"/></port>
+<port protocol="udp" portid="161"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="snmp" product="RUGGEDCOM SNMP" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="23"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="telnet" product="RUGGEDCOM ROS" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Siemens RUGGEDCOM embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701511" endtime="1794701513"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.10" addrtype="ipv4"/>
+<address addr="00:30:A7:8A:AB:78" addrtype="mac" vendor="SCHWEITZER ENGINEERING"/>
+<hostnames><hostname name="rtac-sub.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="20000"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="dnp" product="SEL RTAC DNP3" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="SEL RTAC web" version="R152" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701514" endtime="1794701516"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.21" addrtype="ipv4"/>
+<address addr="00:30:A7:ED:88:16" addrtype="mac" vendor="SCHWEITZER ENGINEERING"/>
+<hostnames><hostname name="relay-451a.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="20000"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="dnp" product="SEL-451 DNP3" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="23"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="telnet" product="SEL telnet" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="102"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="iso-tsap" product="SEL-451 IEC 61850 MMS" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="SEL embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701517" endtime="1794701519"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.22" addrtype="ipv4"/>
+<address addr="00:30:A7:83:71:AB" addrtype="mac" vendor="SCHWEITZER ENGINEERING"/>
+<hostnames><hostname name="relay-451b.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="20000"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="dnp" product="SEL-451 DNP3" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="23"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="telnet" product="SEL telnet" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="102"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="iso-tsap" product="SEL-451 IEC 61850 MMS" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="SEL embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701520" endtime="1794701522"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.23" addrtype="ipv4"/>
+<address addr="C4:B5:12:91:4F:A4" addrtype="mac" vendor="General Electric Digital Energy"/>
+<hostnames><hostname name="relay-869.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="GE Multilin 869" version="4.2" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="102"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="iso-tsap" product="GE Multilin IEC 61850 MMS" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="GE Multilin web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="GE embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701523" endtime="1794701525"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.24" addrtype="ipv4"/>
+<address addr="00:0E:8C:C9:0D:4F" addrtype="mac" vendor="Siemens AG"/>
+<hostnames><hostname name="relay-7sj.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="102"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="iso-tsap" product="Siemens SIPROTEC 5 IEC 61850 MMS" version="9.6" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="SIPROTEC web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Siemens embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701526" endtime="1794701528"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.30" addrtype="ipv4"/>
+<address addr="00:02:A3:2A:83:8B" addrtype="mac" vendor="Hitachi Energy Switzerland Ltd"/>
+<hostnames><hostname name="rtu-560.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="2404"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="iec-104" product="Hitachi Energy RTU560" version="13.4" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="RTU560 web" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Hitachi Energy embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701529" endtime="1794701531"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.60.254" addrtype="ipv4"/>
+<address addr="00:13:D5:7A:22:01" addrtype="mac" vendor="RuggedCom"/>
+<hostnames><hostname name="wan-rx1500.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ssh" product="RUGGEDCOM ROX" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701532" endtime="1794701534"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.70.10" addrtype="ipv4"/>
+<address addr="00:01:F0:53:88:5A" addrtype="mac" vendor="Tridium, Inc."/>
+<hostnames><hostname name="bms-jace.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="1911"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="niagara-fox" product="Tridium Niagara Fox" version="4.12.2" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Niagara Web Server" method="probed" conf="10"/></port>
+<port protocol="udp" portid="47808"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="bacnet" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701535" endtime="1794701537"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.70.20" addrtype="ipv4"/>
+<address addr="00:40:84:A2:3E:52" addrtype="mac" vendor="Honeywell"/>
+<hostnames><hostname name="bms-ctrl-1.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="udp" portid="47808"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="bacnet" product="Honeywell Spyder" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Honeywell embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794701538" endtime="1794701540"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.50.70.21" addrtype="ipv4"/>
+<address addr="00:10:8D:F2:8D:B9" addrtype="mac" vendor="Johnson Controls, Inc."/>
+<hostnames><hostname name="bms-ctrl-2.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="udp" portid="47808"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="bacnet" product="Johnson Controls NAE" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Metasys" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Johnson Controls embedded" accuracy="94" line="1"/></os>
+</host>
+<runstats><finished time="1794701548" elapsed="148" exit="success"/><hosts up="46" down="716" total="762"/></runstats></nmaprun>

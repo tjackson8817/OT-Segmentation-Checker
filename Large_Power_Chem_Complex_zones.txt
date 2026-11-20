@@ -1,0 +1,11 @@
+# Bayport Energy & Chemical - intended zones
+10.50.1.0/24 = DMZ Industrial DMZ
+10.50.10.0/24 = L3 Operations
+10.50.20.0/24 = L2 Process Control
+10.50.30.0/24 = L1 Unit 100 Reactor
+10.50.30.30 = SIS Triconex SIS
+10.50.40.0/24 = L1 Tank Farm
+10.50.50.0/24 = L1 Cogeneration
+10.50.60.0/24 = L1 Substation
+10.50.70.0/24 = L1 BMS
+10.200.5.0/24 = PARTNER Grid operator EMS

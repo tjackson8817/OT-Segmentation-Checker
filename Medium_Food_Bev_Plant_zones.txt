@@ -1,0 +1,6 @@
+# Lakeside Foods - intended zone design
+10.30.10.0/24 = L3 Site Operations
+10.30.20.0/24 = L2 Supervisory
+10.30.30.0/24 = L1 Line 1 Filling
+10.30.40.0/24 = L1 Line 2 Packaging
+10.30.50.0/24 = L1 Utilities

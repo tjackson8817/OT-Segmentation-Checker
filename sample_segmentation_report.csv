@@ -1,0 +1,68 @@
+﻿OT Segmentation Checker report,2026-11-20T19:06:21.829Z
+
+Finding,Severity,Category,Title,What we saw,Why it matters,What to do,References,Hosts
+SEG-001,Critical,Conduit,Internet traffic reaches a control zone,Supervisory → Internet (HTTPS),Control and supervisory systems are exchanging traffic directly with internet addresses. Nothing in Levels 0–2 should have a path to or from the internet; that is the single most exploited OT exposure.,"Block the path at the zone boundary firewall, or document it as an allowed conduit limited to the specific hosts and ports shown. Route anything that must cross IT/OT through the DMZ.","IEC 62443-3-3 SR 5.1, SR 1.13 · ATT&CK T0883 Internet Accessible Device, T0822 External Remote Services · M0930, M0937",10.30.20.10 13.107.4.50
+SEG-002,High,Conduit,Internet traffic reaches the operations zone without passing through a DMZ,Internet → Site Operations (HTTPS),"Level 3 systems are talking straight to the internet. Anything that needs outside access (patches, cloud historians, vendor support) should be brokered by a server in the industrial DMZ.","Block the path at the zone boundary firewall, or document it as an allowed conduit limited to the specific hosts and ports shown. Route anything that must cross IT/OT through the DMZ.","IEC 62443-3-3 SR 5.1, SR 5.2 · ATT&CK T0883, T0822 · M0930",52.188.20.14 10.30.10.30
+SEG-003,High,Asset,Devices in the traffic that aren't in the Nmap scan,10.30.40.99 (sends S7comm / IEC 61850 MMS),"These addresses exchanged traffic during the capture but did not answer the scan. They may be transient laptops, unmanaged devices, or something that should not be on the network at all.",Identify the owner of each device. Enforce port security / 802.1X on control-network switches and keep a current asset register.,"IEC 62443-3-3 SR 7.8 · ATT&CK T0864 Transient Cyber Asset, T0848 Rogue Master · M0930",10.30.40.99
+SEG-004,High,Behaviour,Port-scan pattern seen in the traffic,10.30.40.99 probed 36 host:port pairs,"A host opened many short connections to different hosts and ports. If this isn't a scheduled, approved scan, it is reconnaissance, and active scanning can crash fragile controllers.",Confirm whether the scan was authorised. Restrict which hosts may initiate connections into control zones and alert on scan patterns at the boundary.,"ATT&CK T0846 Remote System Discovery, T0846.001 Port Scan · M0930, M0937",10.30.40.99
+SEG-005,Medium,Remote access,Remote-access sessions into control zones that don't come from the DMZ,1 session (RDP) from Site Operations,"Interactive access (RDP, VNC, SSH, Telnet, remote-support tools) into Levels 0–2 should arrive through a single remote-access gateway in the DMZ with MFA, recording and time-limited approval.","Terminate vendor and engineer access on a DMZ jump host or secure remote-access gateway, require MFA, and block RDP/VNC/SSH into control zones from anywhere else.","IEC 62443-3-3 SR 1.13, SR 2.6 · ATT&CK T0886 Remote Services, T0822 · M0932, M0935",10.30.10.30 10.30.20.20
+SEG-006,Medium,Protocol,Cleartext management traffic crosses into control zones,3 sessions using SNMP,"Telnet, FTP, HTTP and SNMPv1/v2c send credentials and community strings in the clear. Carried across a zone boundary, they can be captured anywhere along the path.","Switch to SSH, HTTPS and SNMPv3, or keep device management inside a dedicated management zone instead of crossing production conduits.","IEC 62443-3-3 SR 4.1, SR 1.5 · ATT&CK T0859 Valid Accounts, T1694.001 Default Credentials · M0942",10.30.10.40 10.30.30.2 10.30.40.2
+SEG-007,Medium,Protocol,Windows file sharing / RPC crosses into control zones,2 sessions (SMB) from Site Operations,SMB and MS-RPC are the main way ransomware and worms move laterally. They should not cross from operations or IT into supervisory and control zones.,Block 135/139/445 at the boundary. Move file transfers to a DMZ file-transfer server or an approved one-way mechanism.,"IEC 62443-3-3 SR 5.1 · ATT&CK T0866 Exploitation of Remote Services · M0930, M0937",10.30.10.20 10.30.20.10 10.30.20.20
+SEG-008,Medium,Placement,Windows / IT hosts inside a Level 0–1 zone,10.30.40.50 plc-shrink.plant.local,"Hosts with Windows file sharing, RDP or VNC sit on the same segment as controllers. They are the usual stepping stone into a control cell.","Move workstations and servers to Level 2 or 3, or harden them (disable SMB/RDP) if they must stay in the cell.",IEC 62443-3-3 SR 5.1 · ATT&CK T0886 · M0930,10.30.40.50
+SEG-009,Low,Conduit,Operations polls Level 1 directly (skips Level 2),"Site Operations → Line 2 Packaging (S7comm / IEC 61850 MMS, OPC UA, Omron FINS, MELSEC MC, SNMP); Site Operations → Line 1 Filling (EtherNet/IP, SNMP); Site Operations → Utilities (Modbus/TCP); Line 2 Packaging → Site Operations (NTP)","Level 3 systems (often OPC servers or historians) talk straight to controllers. This is common and can be acceptable, but each path should be documented and limited to the specific hosts and protocols involved.","Block the path at the zone boundary firewall, or document it as an allowed conduit limited to the specific hosts and ports shown. Route anything that must cross IT/OT through the DMZ.",IEC 62443-3-3 SR 5.1 · M0937,10.30.10.11 10.30.40.10 10.30.40.20 10.30.40.30 10.30.40.40 10.30.10.40 10.30.40.2 10.30.30.10 10.30.30.11 10.30.30.2 10.30.50.10 10.30.50.30 10.30.50.50 10.30.50.40 10.30.40.50 10.30.10.5
+SEG-010,Low,Placement,Converged hosts expose both OT and IT services,10.30.10.11 kep-01.plant.local,"These hosts offer an industrial protocol and Windows services at the same time, so one compromise reaches both sides. Common for SCADA and OPC servers; worth hardening.",Disable services the host doesn't need and restrict which zones may reach each service.,IEC 62443-3-3 SR 7.7 · M0942,10.30.10.11
+SEG-011,Low,Placement,Telnet or FTP open on control devices,10.30.40.2 (Telnet); 10.30.40.20 (FTP); 10.30.50.50 (FTP),Cleartext management services on controllers are a frequent source of default and hard-coded credential exposure.,Turn off Telnet and FTP where the device allows it; otherwise restrict them to a management host.,IEC 62443-3-3 SR 4.1 · ATT&CK T1694.001 Default Credentials · M0942,10.30.40.2 10.30.40.20 10.30.50.50
+
+Conduit (from),From level,Conduit (to),To level,Rating,Sessions,Probes,Services
+Site Operations,L3,Line 2 Packaging,L1,Low,5,0,S7comm / IEC 61850 MMS; OPC UA; Omron FINS; MELSEC MC; SNMP
+Site Operations,L3,Line 1 Filling,L1,Low,4,0,EtherNet/IP; SNMP
+Supervisory,L2,Line 1 Filling,L1,Allowed,3,0,EtherNet/IP
+Supervisory,L2,Line 2 Packaging,L1,Allowed,3,0,S7comm / IEC 61850 MMS; Beckhoff ADS
+Supervisory,L2,Utilities,L1,Allowed,1,0,BACnet/IP
+Site Operations,L3,Utilities,L1,Low,4,0,Modbus/TCP
+Supervisory,L2,Site Operations,L3,Allowed,54,0,NTP; DNS
+Line 2 Packaging,L1,Site Operations,L3,Low,3,0,NTP
+Internet,INTERNET,Site Operations,L3,High,1,0,HTTPS
+Site Operations,L3,Supervisory,L2,Allowed,3,0,RDP; SMB
+Supervisory,L2,Internet,INTERNET,Critical,1,0,HTTPS
+
+IP,Name,Vendor,MAC,OS,Zone,Level,Open ports,OT protocols seen,Peers,In Nmap scan,In a finding
+10.30.10.1,core-sw (vlan10).plant.local,"Cisco Systems, Inc",00:1E:BD:4C:11:01,Cisco IOS XE 17.X,Site Operations,L3,22 161,,0,yes,no
+10.30.10.5,dc-01.plant.local,"VMware, Inc.",00:50:56:65:64:CB,Microsoft Windows Server 2022,Site Operations,L3,53 88 389 135 445,,12,yes,no
+10.30.10.10,hist-01.plant.local,"VMware, Inc.",00:50:56:DB:E2:E7,Microsoft Windows Server 2019,Site Operations,L3,135 445 5450,OPC UA (Kepware),3,yes,no
+10.30.10.11,kep-01.plant.local,"VMware, Inc.",00:50:56:A6:67:79,Microsoft Windows Server 2019,Site Operations,L3,135 445 49320,S7comm / IEC 61850 MMS; EtherNet/IP; OPC UA; Modbus/TCP; Omron FINS; MELSEC MC; OPC UA (Kepware),12,yes,no
+10.30.10.20,mes-01.plant.local,Dell Inc.,B0:83:FE:62:CD:A7,Microsoft Windows Server 2019,Site Operations,L3,135 445 1433,,4,yes,yes
+10.30.10.30,jump-01.plant.local,"VMware, Inc.",00:50:56:41:D9:EE,Microsoft Windows Server 2022,Site Operations,L3,135 445 3389 443,,3,yes,yes
+10.30.10.40,nms-01.plant.local,"VMware, Inc.",00:50:56:12:7F:82,Linux 4.15 - 5.19,Site Operations,L3,22 443,,2,yes,yes
+10.30.20.1,core-sw (vlan20).plant.local,"Cisco Systems, Inc",00:1E:BD:4C:11:01,Cisco IOS XE 17.X,Supervisory,L2,,,0,yes,no
+10.30.20.10,hmi-l1.plant.local,Dell Inc.,A4:BB:6D:F1:FC:8A,Microsoft Windows 10 1809 - 22H2,Supervisory,L2,135 445,EtherNet/IP,5,yes,yes
+10.30.20.11,hmi-l2.plant.local,Siemens AG,00:1B:1B:5A:33:13,Microsoft Windows 10 1809 - 22H2,Supervisory,L2,135 445,S7comm / IEC 61850 MMS; Beckhoff ADS,3,yes,no
+10.30.20.20,ews-rock.plant.local,Dell Inc.,98:90:96:85:05:5A,Microsoft Windows 10 1809 - 22H2,Supervisory,L2,135 445 3389,EtherNet/IP,4,yes,yes
+10.30.20.21,ews-siem.plant.local,SIEMENS AG,08:00:06:67:3F:B7,Microsoft Windows 10 1809 - 22H2,Supervisory,L2,135 445,S7comm / IEC 61850 MMS,2,yes,no
+10.30.20.30,bms-jace.plant.local,"Tridium, Inc.",00:01:F0:70:65:DF,Linux 4.15 - 5.19,Supervisory,L2,1911 443 47808,BACnet/IP,2,yes,no
+10.30.30.1,core-sw (vlan30).plant.local,"Cisco Systems, Inc",00:1E:BD:4C:11:01,Cisco IOS XE 17.X,Line 1 Filling,L1,,,0,yes,no
+10.30.30.2,sw-l1.plant.local,Rockwell Automation,E4:90:69:9D:B3:62,Cisco IOS XE 17.X,Line 1 Filling,L1,80 161 44818,,1,yes,yes
+10.30.30.10,plc-filler.plant.local,Rockwell Automation,00:1D:9C:95:AC:EB,Rockwell embedded,Line 1 Filling,L1,44818 80,EtherNet/IP I/O; EtherNet/IP,6,yes,no
+10.30.30.11,plc-capper.plant.local,Rockwell Automation,5C:88:16:7C:B2:1D,Rockwell embedded,Line 1 Filling,L1,44818,EtherNet/IP,2,yes,no
+10.30.30.20,vfd-fill-1.plant.local,Rockwell Automation,00:00:BC:63:C4:C8,Rockwell embedded,Line 1 Filling,L1,44818,EtherNet/IP I/O,1,yes,no
+10.30.30.21,vfd-fill-2.plant.local,Rockwell Automation,00:00:BC:B1:B2:D1,Rockwell embedded,Line 1 Filling,L1,44818,EtherNet/IP I/O,1,yes,no
+10.30.30.30,io-fill.plant.local,Rockwell Automation,08:61:95:7B:B2:B0,Rockwell embedded,Line 1 Filling,L1,44818,EtherNet/IP I/O,1,yes,no
+10.30.30.40,flow-fill.plant.local,Endress & Hauser GmbH & Co,00:07:05:65:A6:07,Endress+Hauser embedded,Line 1 Filling,L1,44818,,0,yes,no
+10.30.40.1,core-sw (vlan40).plant.local,"Cisco Systems, Inc",00:1E:BD:4C:11:01,Cisco IOS XE 17.X,Line 2 Packaging,L1,,,1,yes,no
+10.30.40.2,sw-l2.plant.local,Siemens AG,00:0E:8C:C7:A3:35,Siemens embedded,Line 2 Packaging,L1,80 161 23,,2,yes,yes
+10.30.40.10,plc-pack.plant.local,Siemens AG,00:1B:1B:56:80:FF,Siemens embedded,Line 2 Packaging,L1,102 80 443,S7comm / IEC 61850 MMS,5,yes,no
+10.30.40.11,io-pack.plant.local,Siemens AG,00:0E:8C:9A:41:5E,Siemens embedded,Line 2 Packaging,L1,,,1,yes,no
+10.30.40.12,io-wrap.plant.local,SIEMENS AG,08:00:06:EE:44:E1,Siemens embedded,Line 2 Packaging,L1,,,1,yes,no
+10.30.40.20,plc-pallet.plant.local,B&R Industrial Automation GmbH,00:60:65:07:58:B1,B&R embedded,Line 2 Packaging,L1,4840 11169 21,OPC UA,3,yes,no
+10.30.40.30,plc-label.plant.local,OMRON Corporation,3C:F7:D1:E3:EE:45,Omron embedded,Line 2 Packaging,L1,9600 44818,Omron FINS,2,yes,no
+10.30.40.40,plc-case.plant.local,Mitsubishi Electric Corporation,10:4B:46:FF:33:60,Mitsubishi embedded,Line 2 Packaging,L1,5007 5006,MELSEC MC,2,yes,no
+10.30.40.50,plc-shrink.plant.local,Beckhoff Automation GmbH,00:01:05:50:06:1F,Microsoft Windows 10 1809 - 22H2,Line 2 Packaging,L1,48898 987,Beckhoff ADS,3,yes,yes
+10.30.40.99,,,,,Line 2 Packaging,L1,,S7comm / IEC 61850 MMS,9,no,yes
+10.30.50.1,core-sw (vlan50).plant.local,"Cisco Systems, Inc",00:1E:BD:4C:11:01,Cisco IOS XE 17.X,Utilities,L1,,,0,yes,no
+10.30.50.10,vfd-ammonia.plant.local,Danfoss A/S,00:07:68:BB:63:2C,Danfoss embedded,Utilities,L1,502 80,Modbus/TCP,1,yes,no
+10.30.50.20,ahu-ctrl.plant.local,"Johnson Controls, Inc.",00:10:8D:D3:EF:12,Johnson Controls embedded,Utilities,L1,47808,BACnet/IP,1,yes,no
+10.30.50.30,boiler-plc.plant.local,WAGO Kontakttechnik GmbH,00:30:DE:82:DA:FF,Linux 4.15 - 5.19,Utilities,L1,502 80 22,Modbus/TCP,1,yes,no
+10.30.50.40,cip-skid.plant.local,PHOENIX CONTACT Electronics GmbH,00:A0:45:77:F1:58,Phoenix Contact embedded,Utilities,L1,1962 502 80,Modbus/TCP,1,yes,no
+10.30.50.50,air-comp.plant.local,TELEMECANIQUE ELECTRIQUE,00:80:F4:73:E8:F0,Schneider embedded,Utilities,L1,502 21 80,Modbus/TCP,1,yes,no
+13.107.4.50,,,,,Internet,INTERNET,,,1,no,yes
+52.188.20.14,,,,,Internet,INTERNET,,,1,no,yes

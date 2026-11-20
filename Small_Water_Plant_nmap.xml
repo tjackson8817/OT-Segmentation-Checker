@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sS -sU -sV -O -p T:21-23,80,102,443,445,502,789,1911,1962,2404,3389,4840,5007,5094,9600,18245,20000,44818,U:161,47808 10.10.10.0/24 10.10.20.0/24" start="1794885000" startstr="Tue Nov 17 03:10:00 2026" version="7.95" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="45" services="21-23,80,102,161,443,445,502,789,1911,1962,2222,2404,3389,4840,5007,5094,9600,18245,20000,44818,47808"/>
+<host starttime="1794885003" endtime="1794885005"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.10.1" addrtype="ipv4"/>
+<address addr="00:09:0F:9A:41:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-01 (vlan10).plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="53"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="domain" product="dnsmasq" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="Fortinet FortiGate admin" version="7.2.8" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ssh" product="OpenSSH" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885006" endtime="1794885008"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.1" addrtype="ipv4"/>
+<address addr="00:09:0F:9A:41:01" addrtype="mac" vendor="Fortinet, Inc."/>
+<hostnames><hostname name="fw-01 (vlan20).plant.local" type="PTR"/></hostnames>
+<ports>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885009" endtime="1794885011"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.10.10" addrtype="ipv4"/>
+<address addr="D4:BE:D9:63:B7:EF" addrtype="mac" vendor="Dell Inc."/>
+<hostnames><hostname name="scada-srv01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="3389"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="ms-wbt-server" product="Microsoft Terminal Services" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="4840"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="opcua-tcp" product="Inductive Automation Ignition OPC UA" version="8.1.33" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="8088"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="http" product="Ignition Gateway" version="8.1.33" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows Server 2019" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885012" endtime="1794885014"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.10.11" addrtype="ipv4"/>
+<address addr="3C:D9:2B:6D:71:93" addrtype="mac" vendor="Hewlett Packard"/>
+<hostnames><hostname name="hmi-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows 10 1809 - 22H2" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885015" endtime="1794885017"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.10.20" addrtype="ipv4"/>
+<address addr="F8:BC:12:6C:A8:E0" addrtype="mac" vendor="Dell Inc."/>
+<hostnames><hostname name="ews-01.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="135"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="microsoft-ds" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="3389"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="ms-wbt-server" product="Microsoft Terminal Services" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Microsoft Windows 11 23H2" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885018" endtime="1794885020"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.2" addrtype="ipv4"/>
+<address addr="00:A0:45:82:62:52" addrtype="mac" vendor="PHOENIX CONTACT Electronics GmbH"/>
+<hostnames><hostname name="sw-ctrl.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Phoenix Contact FL SWITCH web" version="3.27" method="probed" conf="10"/></port>
+<port protocol="udp" portid="161"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="snmp" product="SNMPv1 server" version="public" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Phoenix Contact embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885021" endtime="1794885023"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.10" addrtype="ipv4"/>
+<address addr="00:1D:9C:E3:BB:62" addrtype="mac" vendor="Rockwell Automation"/>
+<hostnames><hostname name="plc-filter.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="44818"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="EtherNet-IP-2" product="Rockwell Automation 5069-L320ER/A" version="33.011" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Rockwell Automation web server" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Rockwell embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885024" endtime="1794885026"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.11" addrtype="ipv4"/>
+<address addr="00:80:F4:A6:7A:CE" addrtype="mac" vendor="TELEMECANIQUE ELECTRIQUE"/>
+<hostnames><hostname name="plc-highlift.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="Schneider Electric BMX P34 2020" version="v3.40" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="21"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ftp" product="Schneider Electric M340 ftpd" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Schneider-WEB" version="V2.1" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Schneider embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885027" endtime="1794885029"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.12" addrtype="ipv4"/>
+<address addr="00:30:DE:6A:20:DC" addrtype="mac" vendor="WAGO Kontakttechnik GmbH"/>
+<hostnames><hostname name="plc-chem.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="WAGO 750-8212 PFC200" version="04.02.13" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ssh" product="OpenSSH" version="8.4" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="lighttpd" version="1.4.59" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="lighttpd" version="1.4.59" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885030" endtime="1794885032"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.20" addrtype="ipv4"/>
+<address addr="00:30:A7:9B:6C:38" addrtype="mac" vendor="SCHWEITZER ENGINEERING"/>
+<hostnames><hostname name="rtu-intake.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="20000"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="dnp" product="SEL-3530 RTAC DNP3" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="SEL RTAC web" version="R151" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="SEL embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885033" endtime="1794885035"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.30" addrtype="ipv4"/>
+<address addr="00:90:E8:A8:88:CA" addrtype="mac" vendor="MOXA TECHNOLOGIES CORP., LTD."/>
+<hostnames><hostname name="gw-flow.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="502"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="modbus" product="Moxa MGate MB3180" version="1.5" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="23"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="telnet" product="Moxa NPort telnetd" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Moxa NPort web" version="1.5" method="probed" conf="10"/></port>
+<port protocol="udp" portid="4800"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="moxa" product="Moxa discovery" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Moxa embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885036" endtime="1794885038"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.40" addrtype="ipv4"/>
+<address addr="00:05:E4:C2:75:D8" addrtype="mac" vendor="Red Lion Controls Inc."/>
+<hostnames><hostname name="hmi-panel.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="789"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="crimson" product="Red Lion Crimson v3" version="3.1" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Red Lion web server" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Red Lion embedded" accuracy="94" line="1"/></os>
+</host>
+<host starttime="1794885039" endtime="1794885041"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.20.50" addrtype="ipv4"/>
+<address addr="00:A0:D5:CF:D6:03" addrtype="mac" vendor="Sierra Wireless, ULC"/>
+<hostnames><hostname name="cell-rv50.plant.local" type="PTR"/></hostnames>
+<ports>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ssh" product="Dropbear sshd" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="9191"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="AirLink ACEmanager" version="4.17" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="9443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" product="AirLink ACEmanager" version="4.17" method="probed" conf="10"/></port>
+</ports>
+<os><osmatch name="Linux 4.15 - 5.19" accuracy="94" line="1"/></os>
+</host>
+<runstats><finished time="1794885049" elapsed="49" exit="success"/><hosts up="13" down="749" total="762"/></runstats></nmaprun>
