@@ -71,7 +71,17 @@ Each finding cites the relevant IEC 62443-3-3 system requirement and MITRE ATT&C
 
 ## Try it
 
-Click **Load sample plant** in the tool. To try other networks, the `samples/` folder has three plant networks (small water plant, medium food and beverage plant, large power and chemical complex). Each comes with an Nmap scan, a conversations export and a zone file. `sample_segmentation_report.*` shows the output for the medium plant.
+Click **Load sample plant** in the tool. To try other networks, this repository includes three plant networks. Each one has an Nmap scan, a conversations export and a zone file:
+
+| Plant | Nmap scan | Conversations | Zones |
+|---|---|---|---|
+| Small water treatment plant | `Small_Water_Plant_nmap.xml` | `Small_Water_Plant_conversations.csv` | `Small_Water_Plant_zones.txt` |
+| Medium food & beverage plant | `Medium_Food_Bev_Plant_nmap.xml` | `Medium_Food_Bev_Plant_conversations.csv` | `Medium_Food_Bev_Plant_zones.txt` |
+| Large power & chemical complex | `Large_Power_Chem_Complex_nmap.xml` | `Large_Power_Chem_Complex_conversations.csv` | `Large_Power_Chem_Complex_zones.txt` |
+
+Load the scan and the conversations file, paste the contents of the zones file into the Zones box, and click **Run segmentation check**.
+
+`sample_segmentation_report.csv`, `sample_segmentation_report.pdf` and `sample_segmentation_session.json` show the output for the medium plant. Import the session file with **Import session** to reload that exact assessment.
 
 ## Hosting
 
